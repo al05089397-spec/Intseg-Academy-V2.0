@@ -64,4 +64,4 @@ Desarrollo ágil con **Scrum** — sprints de 1-2 semanas con entregables increm
 
 ## Equipo
 
-Proyecto desarrollado para la materia **Ingeniería de Software** — TecMilenio 2025
+Proyecto desarrollado para la materia **Ingeniería de Software** — TecMilenio 2026
