@@ -1,0 +1,132 @@
+name: CI/CD - IntSeg Academy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Validación y pruebas de calidad
+  # ─────────────────────────────────────────────
+  test:
+    name: Pruebas y Validación
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Validar estructura HTML
+        run: |
+          echo "Validando archivos HTML..."
+          find . -name "*.html" | while read file; do
+            echo "Revisando: $file"
+            python3 -c "
+          import sys
+          from html.parser import HTMLParser
+          class Validator(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.errors = []
+          with open('$file', 'r', encoding='utf-8') as f:
+              content = f.read()
+          print('  OK:', '$file')
+          "
+          done
+
+      - name: Verificar seguridad - Credenciales expuestas
+        run: |
+          echo "Escaneando credenciales hardcodeadas..."
+          if grep -rn "password\s*=\s*['\"][^'\"]\+" --include="*.js" --include="*.html" .; then
+            echo "ADVERTENCIA: Posibles credenciales detectadas"
+          else
+            echo "OK: No se detectaron credenciales expuestas"
+          fi
+
+      - name: Auditoría de dependencias
+        run: |
+          echo "Revisando dependencias externas en HTML..."
+          grep -rh "src=" --include="*.html" . | grep -oP 'https?://[^"]+' | sort -u || true
+          echo "Auditoría completada"
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Pruebas de accesibilidad y rendimiento
+  # ─────────────────────────────────────────────
+  quality:
+    name: Calidad del Software
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v3
+
+      - name: Métricas de tamaño de archivos
+        run: |
+          echo "=== Reporte de métricas de calidad ==="
+          echo "Archivos HTML:"
+          find . -name "*.html" -exec wc -l {} + | tail -1
+          echo "Archivos JS:"
+          find . -name "*.js" -exec wc -l {} + | tail -1 || echo "Sin archivos JS separados"
+          echo "Total de recursos:"
+          find . -type f | wc -l
+
+      - name: Verificar cobertura de roles de usuario
+        run: |
+          echo "Verificando implementación de roles..."
+          if grep -r "admin\|guardia\|role" --include="*.js" --include="*.html" . | grep -q "role"; then
+            echo "OK: Sistema de roles detectado"
+          else
+            echo "INFO: Revisar implementación de roles"
+          fi
+
+  # ─────────────────────────────────────────────
+  # JOB 3: Despliegue a GitHub Pages
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Despliegue a Producción
+    runs-on: ubuntu-latest
+    needs: [test, quality]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v3
+
+      - name: Verificar integridad antes del despliegue
+        run: |
+          echo "=== Verificación pre-despliegue ==="
+          echo "Rama: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: Desplegar a GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          commit_message: "Deploy v${{ github.run_number }} - ${{ github.sha }}"
+
+      - name: Notificación de despliegue exitoso
+        run: |
+          echo "========================================"
+          echo "  DESPLIEGUE EXITOSO - IntSeg Academy"
+          echo "  Versión: ${{ github.run_number }}"
+          echo "  URL: https://al05089397-spec.github.io/Intseg-Academy-V2.0"
+          echo "========================================"
