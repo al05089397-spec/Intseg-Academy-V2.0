@@ -81,7 +81,6 @@ function doLogin() {
   const roleLabels = { admin:"Administrador", maestro:"Instructor", guardia:"Guardia" };
   const welcomeEl = document.getElementById("adminWelcome");
   if (welcomeEl) welcomeEl.textContent = "Bienvenido;
-  navigate(found.role==="admin"||found.role==="maestro" ? "admin" : "catalog");
 }
 // ── Logout ─────────────────────────────────────────────────
 function doLogout() {
