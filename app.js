@@ -1,956 +1,626 @@
-// ═══════════════════════════════════════════════════════════════
-// INTSEG ACADEMY V2.0 — app.js
-// Funcionalidades implementadas:
-//  ✅ Login / Logout con 3 roles (admin, instructor, guardia)
-//  ✅ Catálogo dinámico con progreso real por usuario
-//  ✅ Detalle de curso con acordeón de módulos funcional
-//  ✅ Sistema de evaluaciones (quiz con 5 preguntas por curso)
-//  ✅ Seguimiento de progreso con localStorage
-//  ✅ Gestión de usuarios (CRUD)
-//  ✅ Gestión de cursos (CRUD)
-//  ✅ Reportes de avance por guardia
-//  ✅ Ajustes (cambio de contraseña, reset)
-//  ✅ Navegación sidebar completa
-// ═══════════════════════════════════════════════════════════════
+/**
+ * IntSeg Academy — app.js v2.4
+ * Admin completo: Dashboard, Usuarios, Cursos (editable), Evaluaciones
+ */
 
-// ──────────────────────────────────────────────────────────────
-// 1. DATOS POR DEFECTO
-// ──────────────────────────────────────────────────────────────
-
-const DEFAULT_USERS = [
-  { id:"u1", user:"guardia01",  pass:"intseg123", role:"guardia", name:"Carlos Mendoza",  active:true },
-  { id:"u2", user:"guardia02",  pass:"intseg456", role:"guardia", name:"Ana Torres",       active:true },
-  { id:"u3", user:"guardia03",  pass:"intseg789", role:"guardia", name:"Pedro Ramírez",    active:true },
-  { id:"u4", user:"admin",      pass:"admin123",  role:"admin",   name:"Claudia Escoto",   active:true },
-  { id:"u5", user:"instructor", pass:"inst123",   role:"maestro", name:"Susana Ochoa",     active:true },
+const PLAIN_USERS = [
+  { user:"guardia01",  pass:"intseg123",  role:"guardia",    nombre:"Guardia 01"    },
+  { user:"admin",      pass:"Admin#2026", role:"admin",      nombre:"Administrador" },
+  { user:"instructor", pass:"Inst#2026",  role:"maestro",    nombre:"Instructor"    },
 ];
 
-const DEFAULT_COURSES = [
-  {
-    id:"dc3",
+// Datos simulados de otros usuarios para demo del admin
+const DEMO_PROGRESS = {
+  guardia01:  { dc3:{ passed:true,  score:9 }, iso:{ passed:false, score:6 }, aml:{ passed:true,  score:8 } },
+  instructor: { dc3:{ passed:true,  score:10}, iso:{ passed:true,  score:9 }, aml:{ passed:true,  score:8 } },
+};
+
+const COURSE_CONTENT = {
+  dc3: {
     badge:"Certificación DC3",
-    title:"Normatividad en Seguridad Privada",
-    instructor:"Juan Pérez",
-    duration:"3 horas",
+    title:"Fundamento Legal de la Seguridad Privada",
+    instructor:"Elly Escoto",
+    duration:"2 horas",
     img:"avatar-guardia.png",
-    desc:"Curso sobre las normas y regulaciones en seguridad privada necesarias para desempeñar funciones de vigilante. Cubre la Ley Federal de Seguridad Privada y el reglamento de la SSPF.",
-    passingScore: 80,
+    pdf:"Fundamento_Legal.pdf",
+    desc:"Conoce el marco normativo que regula la seguridad privada en México: leyes aplicables, uso de la fuerza, manejo de evidencia y responsabilidades del guardia.",
     modules:[
-      { id:"dc3-m1", title:"Marco legal de la seguridad privada",
-        content:"La Ley Federal de Seguridad Privada (LFSP) establece los requisitos para operar como empresa de seguridad privada. Las empresas deben renovar su autorización cada dos años ante la SSPF. El artículo 15 define las obligaciones del personal operativo." },
-      { id:"dc3-m2", title:"Procedimientos operativos estándar",
-        content:"Los POE definen los protocolos de actuación en cada puesto. Incluyen: ronda de inspección, registro de visitantes, manejo de accesos y coordinación con cuerpos de seguridad pública. Toda ronda debe registrarse en la bitácora del puesto." },
-      { id:"dc3-m3", title:"Manejo y reporte de incidentes",
-        content:"Todo incidente debe reportarse en las primeras 24 horas usando el formato SPGIP-FO-027. Los incidentes críticos (robo, lesiones) requieren reporte inmediato a supervisión y, según el caso, a autoridades competentes." },
-    ],
-    questions:[
-      { q:"¿Qué ley regula los servicios de seguridad privada en México?",
-        opts:["Ley Federal del Trabajo","Ley Federal de Seguridad Privada","Ley de Seguridad Nacional","Código Penal Federal"], ans:1 },
-      { q:"¿Cada cuánto tiempo deben renovar su autorización las empresas de seguridad privada?",
-        opts:["Cada año","Cada tres años","Cada dos años","Cada cinco años"], ans:2 },
-      { q:"¿Cuál es el plazo máximo para reportar un incidente ordinario?",
-        opts:["12 horas","48 horas","24 horas","72 horas"], ans:2 },
-      { q:"¿Qué formato se usa para el reporte de incidentes?",
-        opts:["SPGIP-FO-011","SPGIP-FO-027","DC3-001","SSC-2024"], ans:1 },
-      { q:"¿Quién expide la autorización para operar como empresa de seguridad privada?",
-        opts:["IMSS","STPS","SSPF","SAT"], ans:2 },
-    ],
+      { title:"Módulo 1 — ¿Por qué conocer el marco legal?", items:["Conocer y entender las leyes te ayuda a actuar de forma adecuada y justa.","Protege tanto a los ciudadanos como al propio guardia de consecuencias legales.","⚠️ La ley NO te exime de responsabilidad por desconocimiento."] },
+      { title:"Módulo 2 — Legislación y regulaciones aplicables", items:["🔺 Constitución Política de los Estados Unidos Mexicanos (norma máxima).","Ley General del Sistema Nacional de Seguridad Pública.","Ley Federal de Seguridad Privada.","Ley Nacional del Uso de la Fuerza.","Reglamentos estatales y municipales.","Reglamento Interior de Trabajo — derechos y obligaciones del personal."] },
+      { title:"Módulo 3 — Uso de la fuerza (Art. 11)", items:["Presencia de Autoridad: la sola presencia visible e identificable del guardia disuade conductas ilícitas.","El guardia debe mantener actitud profesional en todo momento.","Principios: Legalidad, Necesidad y Proporcionalidad.","PR-24 y gas chile: solo en caso de ABSOLUTA NECESIDAD cuando la integridad esté en riesgo."] },
+      { title:"Módulo 4 — Manejo de evidencia e informes", items:["Cadena de custodia: mantener integridad y autenticidad de la evidencia.","Documenta: tipo de evidencia, fecha, hora, lugar y quien la recolectó.","El informe debe ser claro, conciso, formal y objetivo.","Adjunta fotografías, diagramas y registros pertinentes.","Resguarda en lugar seguro. Mantén absoluta discreción."] },
+      { title:"Módulo 5 — Responsabilidades y sanciones", items:["Responsabilidad Civil: obligaciones frente a terceros por daños causados.","Responsabilidad Penal: infracciones que constituyen delitos (prisión o multas).","Responsabilidad Administrativa: infracciones a normas administrativas.","Las sanciones varían: multa, prisión o trabajo comunitario.","💡 Respetar y hacer respetar los derechos de las personas."] },
+    ]
   },
-  {
-    id:"iso",
+  iso: {
     badge:"Certificación Internacional",
-    title:"ISO 28001: Seguridad en la Cadena de Suministro",
-    instructor:"Susana Ochoa",
+    title:"C-TPAT / OEA: Seguridad en la Cadena de Suministro",
+    instructor:"Elly Escoto",
     duration:"4 horas",
     img:"cover-iso28001.jpg",
-    desc:"Estándares internacionales para asegurar la cadena de suministro y operaciones logísticas. Requisito para la certificación OEA y C-TPAT.",
-    passingScore: 80,
+    pdf:"CTPAT_OEA.pdf",
+    desc:"Estándares C-TPAT y OEA para asegurar la cadena de suministro. Inspección de vehículos, sellos, paquetes sospechosos y control de acceso.",
     modules:[
-      { id:"iso-m1", title:"Introducción a ISO 28001",
-        content:"ISO 28001 especifica los requisitos para implementar un sistema de gestión de seguridad en la cadena de suministro. Busca proteger las operaciones logísticas contra amenazas como el contrabando, la introducción de drogas y el terrorismo." },
-      { id:"iso-m2", title:"Evaluación y gestión de riesgos",
-        content:"La metodología ISO 28001 incluye: identificación de activos críticos, análisis de amenazas, evaluación de vulnerabilidades y determinación de contramedidas. Se usa una matriz de riesgo 5×5 para priorizar acciones." },
-      { id:"iso-m3", title:"Controles y contramedidas de seguridad",
-        content:"Los controles de seguridad física incluyen: acceso con credencial, CCTV en zonas críticas, sellado de contenedores con número único, inspección de vehículos en entrada y salida, y registro de todo el personal externo." },
-    ],
-    questions:[
-      { q:"¿Cuál es el principal objetivo de la norma ISO 28001?",
-        opts:["Gestión de calidad","Seguridad en la cadena de suministro","Control de manufactura","Gestión ambiental"], ans:1 },
-      { q:"¿Qué amenaza busca prevenir ISO 28001 en los contenedores?",
-        opts:["Daño por humedad","Introducción de contrabando o drogas","Retraso en entrega","Daño por temperatura"], ans:1 },
-      { q:"¿Qué dimensiones tiene la matriz de riesgo de ISO 28001?",
-        opts:["3×3","4×4","5×5","6×6"], ans:2 },
-      { q:"¿Cuál de estos es un control físico de ISO 28001?",
-        opts:["Análisis de sangre","Sellado de contenedores con número único","Polígrafo mensual","Cámaras en domicilios"], ans:1 },
-      { q:"ISO 28001 es requisito para obtener:",
-        opts:["ISO 9001","OHSAS","Certificación OEA y C-TPAT","ISO 14001"], ans:2 },
-    ],
+      { title:"Módulo 1 — ¿Qué es C-TPAT y OEA?", items:["C-TPAT: Asociación Comercial Contra el Terrorismo (programa de CBP/EE.UU.).","OEA: Operador Económico Autorizado, impulsado por la Organización Mundial de Aduanas (OMA).","Objetivo: asegurar la cadena de suministro desde el origen hasta el destino."] },
+      { title:"Módulo 2 — Control de acceso de personas", items:["Todo visitante debe presentar identificación oficial vigente.","Visitantes extranjeros: ID oficial + Formato Migratorio Múltiple (FMM).","Registrar: nombre, empresa, hora de entrada/salida, motivo.","Conducta sospechosa: fotografías sin autorización, merodear sin destino."] },
+      { title:"Módulo 3 — Recorridos perimetrales", items:["Verificar: barreras, puertas, estacionamientos, lámparas, cámaras y personas no autorizadas.","Principal herramienta de alerta: oído, olfato y vista.","Reportar de inmediato cualquier anomalía al supervisor."] },
+      { title:"Módulo 4 — Inspección de vehículos y sellos", items:["Los vehículos de carga se inspeccionan en 17 puntos.","Método VVTT — Ver, Verificar, Tira, Torcer/Girar.","Señales de contaminación: olores inusuales, compartimentos ocultos, modificaciones.","El número de placas vigente NO es señal de contaminación."] },
+      { title:"Módulo 5 — Paquetes y objetos sospechosos", items:["Señales: peso desproporcionado, olores químicos, embalaje en mal estado.","Ante paquete sospechoso: NO mover, NO abrir. Aislar y reportar.","Aplicar las 3 C: Confirmar, Comunicar, Controlar el perímetro."] },
+    ]
   },
-  {
-    id:"aml",
-    badge:"Certificación OEA",
-    title:"Antilavado de Dinero y Seguridad Patrimonial",
-    instructor:"Lic. M. González",
+  aml: {
+    badge:"Seguridad Patrimonial",
+    title:"Seguridad Patrimonial",
+    instructor:"Elly Escoto",
     duration:"2 horas",
     img:"cover-antilavado.jpg",
-    desc:"Cumplimiento normativo obligatorio. Identificación y reporte de operaciones sospechosas según la Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita.",
-    passingScore: 80,
+    pdf:"Seguridad_Patrimonial.pdf",
+    desc:"Funciones del guardia: controles de acceso, rondines, reporte de incidentes, actos y condiciones inseguros, y manejo de emergencias.",
     modules:[
-      { id:"aml-m1", title:"Marco normativo antilavado (LFPIORPI)",
-        content:"La Ley Federal para la Prevención e Identificación de Operaciones con Recursos de Procedencia Ilícita obliga a ciertas actividades vulnerables a presentar avisos ante la UIF (Unidad de Inteligencia Financiera) de la SHCP." },
-      { id:"aml-m2", title:"Señales de alerta y operaciones sospechosas",
-        content:"Señales de alerta: pagos en efectivo por montos inusualmente altos, clientes que evitan identificarse, transacciones sin justificación económica, uso de intermediarios sin relación comercial clara, cambios frecuentes de domicilio o identidad." },
-      { id:"aml-m3", title:"Procedimiento de reporte interno",
-        content:"El personal operativo reporta situaciones sospechosas a su supervisor dentro de las 24 horas. El supervisor escala al Oficial de Cumplimiento, quien evalúa si presenta un aviso ante la UIF dentro de los 30 días calendario." },
-    ],
-    questions:[
-      { q:"¿Ante qué institución se presentan los avisos de operaciones sospechosas?",
-        opts:["SAT","CONDUSEF","UIF – SHCP","CNBV"], ans:2 },
-      { q:"¿Cuál es la ley antilavado aplicable en México?",
-        opts:["Ley General de Títulos y Operaciones de Crédito","LFPIORPI","Ley del Mercado de Valores","Ley de Instituciones de Crédito"], ans:1 },
-      { q:"¿En cuánto tiempo debe el personal reportar una situación sospechosa?",
-        opts:["72 horas","Sin límite","24 horas","7 días"], ans:2 },
-      { q:"¿Cuál de estas situaciones es una señal de alerta de lavado de dinero?",
-        opts:["Cliente que solicita factura","Pago en efectivo por monto inusualmente alto","Cliente que llega con cita","Transacción con documentación completa"], ans:1 },
-      { q:"¿Quién evalúa si se presenta un aviso ante la UIF?",
-        opts:["El guardia operativo","El director general","El Oficial de Cumplimiento","El cliente"], ans:2 },
-    ],
+      { title:"Módulo 1 — Funciones principales del guardia", items:["1. Controles de acceso — registrar y autorizar entradas y salidas.","2. Revisiones — SOLO por consigna del cliente, nunca por iniciativa propia.","3. Rondines — observando, escuchando e identificando aromas extraños.","4. Reporte diario — fecha, hora, personas involucradas y medidas tomadas."] },
+      { title:"Módulo 2 — Actos y condiciones inseguros", items:["Acto inseguro: acción del trabajador que representa riesgo (ignorar procedimientos, no usar EPP).","Condición insegura: situación del entorno que representa peligro.","Ejemplos: iluminación fallando, mallas rotas, cámaras fuera de servicio.","El guardia debe reportar ambos tipos al supervisor sin ignorarlos."] },
+      { title:"Módulo 3 — Manejo de emergencias", items:["🔥 Incendio: revisar equipo, verificar rutas de evacuación, coordinar con emergencias (9-1-1).","📞 Extorsión: conservar calma, NO dar datos, colgar e informar al supervisor.","Los extorsionadores operan en horarios inhábiles: noches y fines de semana.","Número de emergencias: 9-1-1 y/o 089."] },
+      { title:"Módulo 4 — Reporte de incidentes", items:["Todo incidente debe quedar documentado por escrito.","Incluir: fecha, hora, lugar, personas involucradas, descripción y medidas tomadas.","Usar lenguaje claro, objetivo, sin opiniones personales.","Entregar al supervisor al término del turno o de inmediato si es urgente."] },
+    ]
   },
-];
+};
 
-// ──────────────────────────────────────────────────────────────
-// 2. ESTADO (localStorage)
-// ──────────────────────────────────────────────────────────────
+const QUIZZES = {
+  dc3:[
+    {q:"¿Qué establece la ley respecto al desconocimiento del marco legal?",opts:["Reduce la sanción si el guardia no sabía","Permite una advertencia antes de sancionar","No exime de responsabilidad por desconocerlo","Solo aplica a mandos superiores"],ans:2},
+    {q:"¿Cuál es la norma de mayor jerarquía que regula la actuación del guardia?",opts:["Ley Federal de Seguridad Privada","Reglamento Interior de Trabajo","Constitución Política de los Estados Unidos Mexicanos","Reglamentos municipales"],ans:2},
+    {q:"Según el Art. 11, ¿en qué consiste la 'Presencia de Autoridad'?",opts:["En intervenir físicamente ante cualquier amenaza","En la sola presencia visible, identificable y profesional del guardia para disuadir conductas ilícitas","En portar armamento visible en todo momento","En patrullar constantemente el perímetro"],ans:1},
+    {q:"¿Bajo qué principios debe basarse el uso de la fuerza?",opts:["Discreción, rapidez y contundencia","Autoridad, disciplina y obediencia","Legalidad, necesidad y proporcionalidad","Prevención, detención y reporte"],ans:2},
+    {q:"¿En qué caso se permite usar armas menos letales como el PR-24 o gas chile?",opts:["Ante cualquier persona que no obedezca","Cuando el supervisor lo autorice","Solo en caso de absoluta necesidad, cuando la integridad del guardia o de quienes cuida esté en riesgo","Durante rondines nocturnos"],ans:2},
+    {q:"¿Qué tipo de responsabilidad implica causar daños y perjuicios a terceros?",opts:["Penal","Civil","Administrativa","Laboral"],ans:1},
+    {q:"¿Qué tipo de responsabilidad se genera al infringir regulaciones administrativas?",opts:["Civil","Penal","Administrativa","Contractual"],ans:2},
+    {q:"¿Qué es la cadena de custodia?",opts:["El protocolo de rondines perimetrales","El proceso para mantener integridad y autenticidad de la evidencia haciéndola admisible legalmente","El registro de entradas y salidas de visitantes","El sistema de comunicación entre supervisores"],ans:1},
+    {q:"Al redactar un informe sobre evidencia, el guardia debe:",opts:["Usar lenguaje informal para mayor claridad","Resumir sin detalles para agilizar el proceso","Usar lenguaje formal y objetivo, describir detalladamente e incluir fotografías y registros","Esperar instrucciones del cliente antes de redactarlo"],ans:2},
+    {q:"¿Cuál es la responsabilidad del guardia respecto a los derechos de las personas?",opts:["Aplicarlos solo con empleados del cliente","Conocerlos pero priorizando la seguridad del inmueble","Reportar cualquier violación sin intervenir","Respetar y hacer respetar los derechos de las personas en todo momento"],ans:3},
+  ],
+  iso:[
+    {q:"¿Qué significa C-TPAT?",opts:["Certificación de Transporte y Prevención de Amenazas","Asociación Comercial Contra el Terrorismo","Control Total de Puertos y Aduanas de Tijuana","Código de Transporte Aduanal y Prevención"],ans:1},
+    {q:"Al recibir a un visitante extranjero, el guardia debe solicitar:",opts:["Solo pasaporte vigente","ID oficial vigente y formato migratorio (FMM)","Carta de invitación de la empresa","Credencial de elector mexicana"],ans:1},
+    {q:"¿Qué organismo internacional impulsa el programa OEA?",opts:["Organización de las Naciones Unidas (ONU)","Cámara Internacional de Comercio (ICC)","Organización Mundial de Aduanas (OMA)","Banco Mundial"],ans:2},
+    {q:"¿Cuál es la principal responsabilidad del guardia en el contexto C-TPAT/OEA?",opts:["Verificar documentos de importación","Alerta mediante oído, olfato y vista","Operar el sistema de cámaras CCTV","Coordinar con agentes aduanales"],ans:1},
+    {q:"Durante un recorrido perimetral, el guardia debe verificar:",opts:["Solo el área de carga y descarga","Únicamente las cámaras de seguridad","Barreras, puertas, estacionamientos, lámparas, cámaras y personas sospechosas","El inventario de mercancía en bodega"],ans:2},
+    {q:"¿Cuál es el método correcto para inspeccionar sellos de seguridad?",opts:["PASS (Pull, Aim, Squeeze, Sweep)","VVTT (Ver, Verificar, Tira, Torcer/Girar)","LINCE (Localizar, Inspeccionar, Notificar, Confirmar, Evaluar)","RAPID (Revisar, Analizar, Prevenir, Informar, Documentar)"],ans:1},
+    {q:"¿Cuántos puntos comprende la inspección de un vehículo de carga?",opts:["7 puntos","12 puntos","17 puntos","21 puntos"],ans:2},
+    {q:"¿Cuál de estas opciones NO es señal de posible contaminación en un vehículo?",opts:["Olores inusuales o químicos","Compartimentos ocultos o modificaciones","Número de placas vigente y en regla","Inconsistencias en el sello o precinto"],ans:2},
+    {q:"¿Cómo se puede identificar un paquete sospechoso?",opts:["Por el color del embalaje","Por su lugar de origen solamente","Por peso desproporcionado y olores químicos inusuales","Por el número de etiquetas que tiene"],ans:2},
+    {q:"¿Qué conducta hace sospechosa a una persona en instalaciones protegidas?",opts:["Usar uniforme de trabajo","Entrar por el acceso principal","Tomar fotografías o videos sin autorización","Preguntar por el supervisor de turno"],ans:2},
+  ],
+  aml:[
+    {q:"¿Cuáles son las 4 funciones principales del guardia de seguridad patrimonial?",opts:["Investigar, arrestar, perseguir, reportar","Controles de acceso, revisiones, rondines y reporte diario","Monitorear CCTV, atender visitantes, abrir puertas, notificar","Escoltar, registrar, asegurar y comunicar"],ans:1},
+    {q:"¿Cuándo puede el guardia realizar revisiones a personas o vehículos?",opts:["Cuando lo considere necesario","En cualquier momento del turno","Solo por consigna del cliente","Solo cuando haya sospecha de delito"],ans:2},
+    {q:"Durante un rondín, el guardia debe:",opts:["Caminar lo más rápido posible","Mantenerse solo en el perímetro exterior","Observar, escuchar e identificar aromas extraños","Evitar acercarse a áreas oscuras"],ans:2},
+    {q:"¿Qué es un acto inseguro?",opts:["Una falla en el equipo electrónico","Una condición ambiental de riesgo","Una acción del trabajador que representa riesgo, como ignorar procedimientos o no usar EPP","Un incidente ya ocurrido"],ans:2},
+    {q:"¿Cuál es un ejemplo de condición insegura que el guardia debe reportar?",opts:["Un visitante que llegó tarde","Una cámara fuera de servicio o malla perimetral rota","Un vehículo en zona permitida","Un empleado en horas extras"],ans:1},
+    {q:"Ante un conato de incendio, el guardia debe:",opts:["Evacuar sin avisar a nadie","Intentar apagarlo solo","Revisar equipo, verificar salidas y coordinar con emergencias","Esperar instrucciones del cliente"],ans:2},
+    {q:"Ante una llamada de extorsión, el guardia debe:",opts:["Negociar con el extorsionador","Transferir al área de finanzas","Conservar la calma, no dar datos, colgar e informar al supervisor","Grabar sin informar a nadie"],ans:2},
+    {q:"¿En qué horarios suelen operar los extorsionadores?",opts:["Horarios de oficina de 9 a 5","Solo en días festivos","En horarios inhábiles: noches y fines de semana","Durante cambios de turno"],ans:2},
+    {q:"¿Qué información debe incluir el reporte diario del guardia?",opts:["Solo los incidentes graves","Fecha, hora, personas involucradas y medidas tomadas","Solo entradas y salidas de vehículos","El número de visitantes y sus nombres"],ans:1},
+    {q:"¿Cuál es el número de emergencias al que debe reportar el guardia?",opts:["800-911-2000","070","9-1-1 (y/o 089)","55-5588-4444"],ans:2},
+  ],
+};
 
-function loadState() {
-  try {
-    return {
-      users:    JSON.parse(localStorage.getItem("ia_users"))    || DEFAULT_USERS.map(u => ({...u})),
-      courses:  JSON.parse(localStorage.getItem("ia_courses"))  || DEFAULT_COURSES.map(c => ({...c})),
-      progress: JSON.parse(localStorage.getItem("ia_progress")) || {},
-    };
-  } catch(e) {
-    return { users: DEFAULT_USERS.map(u=>({...u})), courses: DEFAULT_COURSES.map(c=>({...c})), progress: {} };
-  }
+// ── Estado ─────────────────────────────────────────────────
+let currentUser = null;
+let currentCourseKey = null;
+let quizState = {};
+
+// ── localStorage ───────────────────────────────────────────
+function saveProgress(courseKey, passed, score) {
+  const data = JSON.parse(localStorage.getItem("intseg_progress") || "{}");
+  if (!data[courseKey] || passed) data[courseKey] = { passed, score, date: new Date().toISOString() };
+  localStorage.setItem("intseg_progress", JSON.stringify(data));
 }
-function saveState() {
-  localStorage.setItem("ia_users",    JSON.stringify(S.users));
-  localStorage.setItem("ia_courses",  JSON.stringify(S.courses));
-  localStorage.setItem("ia_progress", JSON.stringify(S.progress));
+function getProgress(courseKey) {
+  return JSON.parse(localStorage.getItem("intseg_progress") || "{}")[courseKey] || null;
+}
+function getAllProgress() {
+  return JSON.parse(localStorage.getItem("intseg_progress") || "{}");
 }
 
-let S = loadState();
-let ME = null;
-let _currentCourse = null;
-let _quiz = null;
-
-function getProg(uid, cid) {
-  if (!S.progress[uid]) S.progress[uid] = {};
-  if (!S.progress[uid][cid]) S.progress[uid][cid] = { status:"not_started", score:null, attempts:0 };
-  return S.progress[uid][cid];
-}
-function setProg(uid, cid, data) {
-  if (!S.progress[uid]) S.progress[uid] = {};
-  S.progress[uid][cid] = { ...getProg(uid, cid), ...data };
-  saveState();
-}
-
-// ──────────────────────────────────────────────────────────────
-// 3. NAVEGACIÓN
-// ──────────────────────────────────────────────────────────────
-
+// ── Navegación ─────────────────────────────────────────────
 function navigate(name) {
-  ["viewLogin","viewCatalog","viewDetail","viewAdmin"].forEach(id => {
-    document.getElementById(id)?.classList.add("hidden");
+  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.add("hidden");
   });
-  document.getElementById("appShell")?.classList.add("hidden");
-  document.querySelectorAll(".ia-dv").forEach(v => v.classList.add("hidden"));
-
-  if (name === "login") {
-    document.getElementById("viewLogin").classList.remove("hidden");
-    return;
-  }
-
+  document.getElementById("appShell").classList.add("hidden");
+  if(name==="login"){document.getElementById("viewLogin").classList.remove("hidden");return;}
   document.getElementById("appShell").classList.remove("hidden");
-
-  const staticMap = { catalog:"viewCatalog", detail:"viewDetail", admin:"viewAdmin" };
-  if (staticMap[name]) {
-    document.getElementById(staticMap[name]).classList.remove("hidden");
-  }
-
-  const dynamicViews = ["users","reports","settings","courseAdmin"];
-  if (dynamicViews.includes(name)) {
-    let el = document.getElementById("ia-dv-" + name);
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "ia-dv-" + name;
-      el.className = "ia-dv";
-      const anchor = document.getElementById("viewAdmin") || document.getElementById("appShell");
-      if (anchor?.parentNode) anchor.parentNode.insertBefore(el, anchor.nextSibling);
-      else document.getElementById("appShell").appendChild(el);
-    }
-    el.classList.remove("hidden");
-  }
-
-  document.querySelectorAll(".sidebar__item, .sidebar__link, nav li, nav a").forEach(i => i.classList.remove("active"));
-  const sideMap = { catalog:"sideCursos", admin:"sideInicio", users:"sideUsuarios", reports:"sideReportes", settings:"sideAjustes", courseAdmin:"sideCursos", detail:"sideCursos" };
-  if (sideMap[name]) document.getElementById(sideMap[name])?.classList.add("active");
-  if (name==="catalog"||name==="detail") document.getElementById("sideInicio")?.classList.add("active");
-  window.scrollTo(0, 0);
+  document.getElementById("sidebar").classList.remove("hidden");
+  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult"};
+  if(map[name]) document.getElementById(map[name]).classList.remove("hidden");
+  document.querySelectorAll(".sidebar__item").forEach(i=>i.classList.remove("active"));
+  if(name==="catalog"){document.getElementById("sideInicio")?.classList.add("active");document.getElementById("sideCursos")?.classList.add("active");}
+  if(name==="admin"){document.getElementById("sideAdmin")?.classList.add("active");}
+  if(name==="admin") renderAdmin();
+  window.scrollTo(0,0);
 }
 
-// ──────────────────────────────────────────────────────────────
-// 4. TOAST
-// ──────────────────────────────────────────────────────────────
-
-let _tt = null;
-function toast(msg, type = "info") {
-  const el = document.getElementById("toast");
-  if (!el) return;
-  el.textContent = msg;
-  el.style.background = type==="error" ? "#dc2626" : type==="success" ? "#16a34a" : "#003d6b";
-  el.classList.remove("hidden");
-  if (_tt) clearTimeout(_tt);
-  _tt = setTimeout(() => el.classList.add("hidden"), 2800);
+// ── Toast ──────────────────────────────────────────────────
+let _tt=null;
+function toast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg;el.classList.remove("hidden");
+  if(_tt)clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add("hidden"),2500);
 }
 
-// ──────────────────────────────────────────────────────────────
-// 5. LOGIN / LOGOUT
-// ──────────────────────────────────────────────────────────────
-
-function doLogin() {
-  const u   = document.getElementById("inputUser").value.trim();
-  const p   = document.getElementById("inputPass").value.trim();
-  const err = document.getElementById("loginError");
-  const found = S.users.find(x => x.user===u && x.pass===p && x.active);
-  if (!found) {
-    err.classList.remove("hidden");
-    setTimeout(() => err.classList.add("hidden"), 3000);
-    return;
-  }
-  ME = found;
-  initSidebar();
-
-  const roleLabel = { admin:"Administrador", maestro:"Instructor", guardia:"Guardia" };
-  const welcomeEl = document.getElementById("adminWelcome");
-  if (welcomeEl) welcomeEl.textContent = "Bienvenido, " + found.name;
-  const badgeEl = document.getElementById("roleBadge");
-  if (badgeEl) {
-    badgeEl.textContent = roleLabel[found.role] || found.role;
-    badgeEl.style.cssText = "display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:bold;background:#003d6b;color:#fff;margin-left:8px;";
-  }
-
-  if (found.role === "guardia") {
-    document.getElementById("sideUsuarios")?.closest("li,.sidebar__item")?.style.setProperty("display","none");
-    document.getElementById("sideReportes")?.closest("li,.sidebar__item")?.style.setProperty("display","none");
-  }
-
-  if (found.role==="admin" || found.role==="maestro") {
-    refreshAdminStats();
-    navigate("admin");
-  } else {
-    buildCatalog();
-    navigate("catalog");
-  }
+// ── Login ──────────────────────────────────────────────────
+async function doLogin(){
+  const u=document.getElementById("inputUser").value.trim();
+  const p=document.getElementById("inputPass").value.trim();
+  const err=document.getElementById("loginError");
+  const users=getUsersDB();
+  const found=users.find(x=>x.user===u&&x.pass===p);
+  if(!found){err.textContent="Usuario o contraseña incorrectos.";err.classList.remove("hidden");setTimeout(()=>err.classList.add("hidden"),3000);return;}
+  if(found.status==="inactivo"){err.textContent="Cuenta desactivada. Contacta al administrador.";err.classList.remove("hidden");setTimeout(()=>err.classList.add("hidden"),4000);return;}
+  currentUser=found;
+  refreshCatalog();
+  navigate(found.role==="admin"||found.role==="maestro"?"admin":"catalog");
 }
-
-function doLogout() {
-  ME = null; _currentCourse = null; _quiz = null;
-  document.getElementById("inputUser").value = "";
-  document.getElementById("inputPass").value = "";
+function doLogout(){
+  currentUser=null;currentCourseKey=null;
+  document.getElementById("inputUser").value="";
+  document.getElementById("inputPass").value="";
   navigate("login");
 }
 
-// ──────────────────────────────────────────────────────────────
-// 6. SIDEBAR
-// ──────────────────────────────────────────────────────────────
-
-function initSidebar() {
-  // Asignar IDs por texto si no los tienen
-  document.querySelectorAll(".sidebar__item, nav li, .sidebar__link, nav a").forEach(item => {
-    const t = item.textContent.trim().toLowerCase();
-    if (!item.id) {
-      if      (t === "inicio")                                  item.id = "sideInicio";
-      else if (t === "cursos")                                  item.id = "sideCursos";
-      else if (t.includes("usuario"))                          item.id = "sideUsuarios";
-      else if (t.includes("reporte"))                          item.id = "sideReportes";
-      else if (t.includes("ajuste"))                           item.id = "sideAjustes";
+// ── Catálogo ───────────────────────────────────────────────
+function refreshCatalog(){
+  Object.keys(COURSE_CONTENT).forEach(key=>{
+    const prog=getProgress(key);
+    const card=document.querySelector(`.courseCard[data-course="${key}"]`);
+    if(!card)return;
+    const bar=card.querySelector(".progressBar__fill");
+    const txt=card.querySelector(".progressText");
+    if(prog?.passed){
+      card.dataset.status="done";
+      if(bar)bar.style.width="100%";
+      if(txt)txt.textContent="✅ Aprobado — "+prog.score+"/10";
+    }else if(prog){
+      card.dataset.status="progress";
+      const pct=Math.round((prog.score/10)*100);
+      if(bar)bar.style.width=pct+"%";
+      if(txt)txt.textContent=pct+"% — Reintentar";
     }
   });
+}
 
-  const sidebar = document.querySelector(".sidebar, aside, .sidebar__nav") ||
-                  document.getElementById("sideInicio")?.closest("nav,aside,div");
-  if (sidebar && !sidebar.dataset.iaInit) {
-    sidebar.dataset.iaInit = "1";
-    sidebar.addEventListener("click", e => {
-      const item = e.target.closest("[id^='side'], .sidebar__logout, [data-logout]");
-      if (!item) {
-        // Detectar "Cerrar sesión" por texto
-        const btn = e.target.closest("button,a,li,div");
-        if (btn) {
-          const t = btn.textContent.trim().toLowerCase();
-          if (t.includes("salir") || t.includes("cerrar sesión") || t.includes("logout")) { doLogout(); return; }
-        }
-        return;
-      }
-      const id = item.id;
-      if      (id === "sideInicio")   { ME?.role==="guardia" ? (buildCatalog(),navigate("catalog")) : (refreshAdminStats(),navigate("admin")); }
-      else if (id === "sideCursos")   { buildCatalog(); navigate("catalog"); }
-      else if (id === "sideUsuarios") { buildUsersView(); navigate("users"); }
-      else if (id === "sideReportes") { buildReportsView(); navigate("reports"); }
-      else if (id === "sideAjustes")  { buildSettingsView(); navigate("settings"); }
+// ── Detalle ────────────────────────────────────────────────
+function loadDetail(key){
+  currentCourseKey=key;
+  const c=COURSE_CONTENT[key];if(!c)return;
+  document.getElementById("detBadge").textContent=c.badge;
+  document.getElementById("detTitle").textContent=c.title;
+  document.getElementById("detInstructor").textContent=c.instructor;
+  document.getElementById("detDuration").textContent=c.duration;
+  document.getElementById("detDesc").textContent=c.desc;
+  const img=document.querySelector("#detAvatar img");if(img)img.src=c.img;
+
+  // Botón PDF
+  const pdfBtn = document.getElementById("btnVerPDF");
+  if(c.pdf){
+    pdfBtn.href = c.pdf;
+    pdfBtn.classList.remove("hidden");
+  } else {
+    pdfBtn.classList.add("hidden");
+  }
+  const container=document.getElementById("moduleList");
+  container.innerHTML="";
+  c.modules.forEach(mod=>{
+    const wrap=document.createElement("div");wrap.className="accordion";
+    const header=document.createElement("button");header.className="accordion__header";
+    header.innerHTML=`<div class="accordion__left"><span class="checkDot"><svg viewBox="0 0 24 24" class="icon"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5L9 16.2z"/></svg></span><span>${mod.title}</span></div><span class="accordion__chevron">›</span>`;
+    const body=document.createElement("div");body.className="accordion__body";
+    const ul=document.createElement("ul");ul.className="accordion__list";
+    mod.items.forEach(item=>{const li=document.createElement("li");li.textContent=item;ul.appendChild(li);});
+    body.appendChild(ul);
+    header.addEventListener("click",()=>{
+      const isOpen=wrap.classList.contains("accordion--open");
+      document.querySelectorAll(".accordion").forEach(a=>a.classList.remove("accordion--open"));
+      if(!isOpen)wrap.classList.add("accordion--open");
     });
-  }
+    wrap.appendChild(header);wrap.appendChild(body);container.appendChild(wrap);
+  });
+  const btn=document.getElementById("btnEval");
+  const prog=getProgress(key);
+  btn.textContent=prog?.passed?"✅ Evaluación superada":prog?"Reintentar evaluación":"Iniciar evaluación";
+}
 
-  // Bottom nav mobile
-  const bottomNav = document.querySelector(".bottom-nav,.nav-bar,.tab-bar");
-  if (bottomNav && !bottomNav.dataset.iaInit) {
-    bottomNav.dataset.iaInit = "1";
-    bottomNav.addEventListener("click", e => {
-      const btn = e.target.closest("button,a,li,div");
-      if (!btn) return;
-      const t = btn.textContent.trim().toLowerCase();
-      if      (t.includes("inicio"))   { ME?.role==="guardia" ? (buildCatalog(),navigate("catalog")) : (refreshAdminStats(),navigate("admin")); }
-      else if (t.includes("curso"))    { buildCatalog(); navigate("catalog"); }
-      else if (t.includes("usuario"))  { buildUsersView(); navigate("users"); }
-      else if (t.includes("ajuste"))   { buildSettingsView(); navigate("settings"); }
+// ── Quiz ───────────────────────────────────────────────────
+function startQuiz(){
+  const key=currentCourseKey;
+  if(!key||!QUIZZES[key]){toast("Quiz no disponible");return;}
+  const pool=[...QUIZZES[key]].sort(()=>Math.random()-.5).slice(0,10);
+  quizState={questions:pool,current:0,answers:[],score:0,courseKey:key};
+  navigate("quiz");renderQuestion();
+}
+function renderQuestion(){
+  const{questions,current}=quizState;const q=questions[current];const total=questions.length;
+  document.getElementById("quizCourseTitle").textContent=COURSE_CONTENT[quizState.courseKey]?.title||"";
+  document.getElementById("quizProgress").textContent=`Pregunta ${current+1} de ${total}`;
+  document.getElementById("quizProgressBar").style.width=((current/total)*100)+"%";
+  document.getElementById("quizQuestion").textContent=q.q;
+  const optsEl=document.getElementById("quizOptions");optsEl.innerHTML="";
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement("button");btn.className="quizOption";btn.textContent=opt;
+    btn.addEventListener("click",()=>selectAnswer(i));optsEl.appendChild(btn);
+  });
+  document.getElementById("btnNextQ").classList.add("hidden");
+}
+function selectAnswer(idx){
+  const q=quizState.questions[quizState.current];
+  document.querySelectorAll(".quizOption").forEach((btn,i)=>{
+    btn.disabled=true;
+    if(i===q.ans)btn.classList.add("quizOption--correct");
+    else if(i===idx&&idx!==q.ans)btn.classList.add("quizOption--wrong");
+  });
+  if(idx===q.ans)quizState.score++;
+  quizState.answers.push(idx);
+  const btnNext=document.getElementById("btnNextQ");
+  btnNext.classList.remove("hidden");
+  btnNext.textContent=quizState.current+1<quizState.questions.length?"Siguiente →":"Ver resultados";
+}
+function nextQuestion(){
+  quizState.current++;
+  if(quizState.current<quizState.questions.length)renderQuestion();else showResult();
+}
+function showResult(){
+  const{score,questions,courseKey}=quizState;const total=questions.length;
+  const passed=score>=Math.ceil(total*.8);const pct=Math.round((score/total)*100);
+  saveProgress(courseKey,passed,score);
+  document.getElementById("resultIcon").textContent=passed?"🏅":"📋";
+  document.getElementById("resultTitle").textContent=passed?"¡Aprobado!":"No aprobado";
+  document.getElementById("resultScore").textContent=`${score} / ${total} correctas (${pct}%)`;
+  document.getElementById("resultMsg").textContent=passed?"Felicidades. Has superado la evaluación con éxito.":"Necesitas mínimo 8 respuestas correctas (80%). Repasa el material e inténtalo de nuevo.";
+  document.getElementById("resultBarFill").style.width=pct+"%";
+  document.getElementById("resultBarFill").style.background=passed?"#22c55e":"#f97316";
+  document.getElementById("btnRetry").style.display=passed?"none":"block";
+  navigate("result");refreshCatalog();
+}
+
+// ══════════════════════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════════════════════
+function renderAdmin(){
+  renderAdminDashboard();
+  renderAdminUsers();
+  renderAdminCourses();
+  renderAdminEvals();
+}
+
+function getAdminProgress(username){
+  if(username===currentUser?.user) return getAllProgress();
+  return DEMO_PROGRESS[username]||{};
+}
+
+function renderAdminDashboard(){
+  const keys=Object.keys(COURSE_CONTENT);
+  // Consolidar todos los usuarios
+  const allUsers=PLAIN_USERS.filter(u=>u.role!=="admin");
+  let totalEvals=0,totalPassed=0,scores=[];
+  allUsers.forEach(u=>{
+    const prog=getAdminProgress(u.user);
+    keys.forEach(k=>{
+      if(prog[k]){totalEvals++;if(prog[k].passed)totalPassed++;scores.push(prog[k].score);}
     });
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// 7. CATÁLOGO
-// ──────────────────────────────────────────────────────────────
-
-function buildCatalog() {
-  const list = document.getElementById("courseList");
-  if (!list) return;
-  list.innerHTML = "";
-  S.courses.forEach(c => {
-    const prog = getProg(ME.id, c.id);
-    const pct  = prog.status==="completed" ? 100 : prog.status==="in_progress" ? 50 : 0;
-    const card = document.createElement("div");
-    card.className = "courseCard";
-    card.dataset.status = prog.status==="not_started" ? "all" : prog.status;
-    card.innerHTML = `
-      <p class="courseCard__badge">${c.badge}</p>
-      <div class="courseCard__row" style="display:flex;align-items:flex-start;gap:12px;">
-        <img src="${c.img}" alt="${c.title}" style="width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
-        <div style="flex:1;min-width:0;">
-          <p class="courseCard__title" style="margin:0 0 4px;font-weight:600;font-size:14px;">${c.title}</p>
-          ${c.instructor ? `<p style="margin:0 0 6px;font-size:12px;color:#64748b;">de <em>${c.instructor}</em></p>` : ""}
-          ${prog.status !== "not_started" ? `
-            <div style="background:#e2e8f0;border-radius:4px;height:6px;margin-bottom:4px;">
-              <div style="background:#ff8c00;height:6px;border-radius:4px;width:${pct}%;transition:width .4s;"></div>
-            </div>
-            <p style="font-size:11px;color:#64748b;margin:0;">${pct}% completado</p>` : ""}
-          ${prog.status==="completed" && prog.score !== null
-            ? `<p style="font-size:11px;color:#16a34a;margin:4px 0 0;">✅ Aprobado — ${prog.score}%</p>` : ""}
-        </div>
-      </div>
-      <button class="btn btn--primary" data-go="detail" data-course="${c.id}"
-        style="width:100%;margin-top:10px;padding:9px;border:none;border-radius:8px;background:#003d6b;color:#fff;cursor:pointer;font-size:14px;font-weight:600;">
-        Ver detalle
-      </button>`;
-    list.appendChild(card);
   });
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("tab--active"));
-  document.querySelector(".tab[data-filter='all']")?.classList.add("tab--active");
-}
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10:0;
+  const passRate=totalEvals?Math.round((totalPassed/totalEvals)*100):0;
 
-// ──────────────────────────────────────────────────────────────
-// 8. DETALLE
-// ──────────────────────────────────────────────────────────────
+  document.getElementById("adminStats").innerHTML=`
+    <div class="statCard"><div class="statCard__n">${allUsers.length}</div><div class="statCard__l">Usuarios activos</div></div>
+    <div class="statCard"><div class="statCard__n">${keys.length}</div><div class="statCard__l">Cursos</div></div>
+    <div class="statCard statCard--green"><div class="statCard__n">${totalPassed}</div><div class="statCard__l">Evaluaciones aprobadas</div></div>
+    <div class="statCard statCard--orange"><div class="statCard__n">${passRate}%</div><div class="statCard__l">Tasa de aprobación</div></div>
+    <div class="statCard"><div class="statCard__n">${avg}</div><div class="statCard__l">Promedio general</div></div>
+    <div class="statCard"><div class="statCard__n">${totalEvals}</div><div class="statCard__l">Evaluaciones realizadas</div></div>
+  `;
 
-function loadDetail(courseId) {
-  const c = S.courses.find(x => x.id===courseId) || S.courses[0];
-  if (!c) return;
-  _currentCourse = c;
-  const prog = getProg(ME.id, c.id);
-  if (prog.status==="not_started") setProg(ME.id, c.id, { status:"in_progress" });
-
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set("detBadge",      c.badge);
-  set("detTitle",      c.title);
-  set("detInstructor", c.instructor);
-  set("detDuration",   c.duration);
-  set("detDesc",       c.desc);
-  const img = document.querySelector("#detAvatar img");
-  if (img) img.src = c.img;
-
-  // Inyectar acordeón de módulos
-  const detView = document.getElementById("viewDetail");
-  let modulesEl = document.getElementById("detModules");
-  if (!modulesEl) {
-    // Buscar el primer botón con "›" y subir hasta el contenedor de módulos
-    const chevron = [...detView.querySelectorAll("button,div,p,span")]
-                      .find(el => el.textContent.trim() === "›");
-    if (chevron) {
-      modulesEl = chevron.closest("ul,ol,section,[class*='module'],[class*='content']")
-                  || chevron.parentElement?.parentElement;
-    }
-    if (!modulesEl) {
-      // Crear antes del botón de evaluación
-      modulesEl = document.createElement("div");
-      const btnEval = document.getElementById("btnEval");
-      if (btnEval?.parentElement) btnEval.parentElement.insertBefore(modulesEl, btnEval);
-      else detView.appendChild(modulesEl);
-    }
-    modulesEl.id = "detModules";
-  }
-
-  if (c.modules?.length) {
-    modulesEl.innerHTML = c.modules.map((m, i) => `
-      <div style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;overflow:hidden;">
-        <button onclick="toggleModule('ia-m-${m.id}')"
-          style="width:100%;background:#f8fafc;border:none;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;font-weight:600;color:#003d6b;text-align:left;">
-          <span>Módulo ${i+1} – ${m.title}</span>
-          <span id="ia-icon-${m.id}" style="font-size:18px;transition:transform .3s;margin-left:8px;flex-shrink:0;">›</span>
-        </button>
-        <div id="ia-m-${m.id}" style="display:none;padding:14px 16px;font-size:13px;color:#334155;line-height:1.7;background:#fff;">
-          ${m.content}
-        </div>
-      </div>`).join("");
-  }
-
-  const btnEval = document.getElementById("btnEval");
-  if (btnEval) {
-    const p = getProg(ME.id, c.id);
-    btnEval.textContent = p.status==="completed"
-      ? `Repetir evaluación (último: ${p.score}%)`
-      : "Iniciar evaluación";
-  }
-}
-
-function toggleModule(id) {
-  const el   = document.getElementById(id);
-  const icon = document.getElementById("ia-icon-" + id.replace("ia-m-",""));
-  if (!el) return;
-  const open = el.style.display !== "none";
-  el.style.display = open ? "none" : "block";
-  if (icon) icon.style.transform = open ? "" : "rotate(90deg)";
-}
-
-// ──────────────────────────────────────────────────────────────
-// 9. QUIZ
-// ──────────────────────────────────────────────────────────────
-
-function openEval() {
-  const c = _currentCourse;
-  if (!c?.questions?.length) { toast("Este curso no tiene evaluación disponible aún.", "error"); return; }
-  _quiz = { courseId: c.id, current: 0, answers: [] };
-  document.getElementById("modalOverlay").classList.remove("hidden");
-  renderQuestion();
-}
-
-function getModalInner() {
-  const overlay = document.getElementById("modalOverlay");
-  let inner = overlay.querySelector(".modal,.modal__content,.modal-box");
-  if (!inner) {
-    // Usar el primer div hijo, o crear uno
-    inner = overlay.querySelector("div");
-    if (!inner) {
-      inner = document.createElement("div");
-      overlay.appendChild(inner);
-    }
-  }
-  inner.style.cssText = "background:#fff;border-radius:16px;max-width:520px;width:90%;margin:auto;max-height:90vh;overflow-y:auto;";
-  return inner;
-}
-
-function renderQuestion() {
-  const c   = S.courses.find(x => x.id===_quiz.courseId);
-  const q   = c.questions[_quiz.current];
-  const cur = _quiz.current + 1;
-  const tot = c.questions.length;
-  getModalInner().innerHTML = `
-    <div style="padding:24px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <h3 style="margin:0;color:#003d6b;font-size:15px;flex:1;padding-right:12px;">📋 ${c.title}</h3>
-        <button onclick="closeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8;flex-shrink:0;">✕</button>
-      </div>
-      <div style="background:#e2e8f0;border-radius:4px;height:6px;margin-bottom:6px;">
-        <div style="background:#003d6b;height:6px;border-radius:4px;width:${Math.round(cur/tot*100)}%;transition:width .3s;"></div>
-      </div>
-      <p style="font-size:12px;color:#94a3b8;margin:0 0 18px;">Pregunta ${cur} de ${tot}</p>
-      <p style="font-size:15px;font-weight:600;color:#1e293b;line-height:1.5;margin:0 0 20px;">${q.q}</p>
-      <div id="quiz-opts" style="display:flex;flex-direction:column;gap:10px;">
-        ${q.opts.map((o,i) => `
-          <button onclick="answerQuestion(${i})"
-            style="text-align:left;padding:12px 16px;border-radius:8px;border:2px solid #e2e8f0;
-                   background:#f8fafc;cursor:pointer;font-size:14px;color:#1e293b;transition:all .15s;"
-            onmouseover="this.style.borderColor='#003d6b';this.style.background='#eff6ff';"
-            onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc';">
-            <strong style="color:#003d6b;margin-right:8px;">${String.fromCharCode(65+i)}.</strong>${o}
-          </button>`).join("")}
-      </div>
+  // Progreso por curso
+  let html="";
+  keys.forEach(k=>{
+    const c=COURSE_CONTENT[k];
+    let passed=0;
+    allUsers.forEach(u=>{const p=getAdminProgress(u.user);if(p[k]?.passed)passed++;});
+    const pct=Math.round((passed/allUsers.length)*100);
+    html+=`<div class="courseStatRow">
+      <div class="courseStatName">${c.title}</div>
+      <div class="courseStatBar"><div class="courseStatFill" style="width:${pct}%"></div></div>
+      <div class="courseStatPct">${passed}/${allUsers.length} aprobaron (${pct}%)</div>
     </div>`;
-}
-
-function answerQuestion(idx) {
-  const c       = S.courses.find(x => x.id===_quiz.courseId);
-  const q       = c.questions[_quiz.current];
-  const correct = idx === q.ans;
-  _quiz.answers.push({ selected:idx, correct });
-  document.querySelectorAll("#quiz-opts button").forEach((btn,i) => {
-    btn.disabled = true;
-    btn.removeAttribute("onmouseover"); btn.removeAttribute("onmouseout");
-    if (i===q.ans)            { btn.style.borderColor="#16a34a"; btn.style.background="#f0fdf4"; }
-    if (i===idx && !correct)  { btn.style.borderColor="#dc2626"; btn.style.background="#fef2f2"; }
   });
-  setTimeout(() => {
-    if (_quiz.current < c.questions.length-1) { _quiz.current++; renderQuestion(); }
-    else showResults();
-  }, 900);
+  document.getElementById("adminCourseStats").innerHTML=html;
 }
 
-function showResults() {
-  const c       = S.courses.find(x => x.id===_quiz.courseId);
-  const correct = _quiz.answers.filter(a=>a.correct).length;
-  const total   = c.questions.length;
-  const score   = Math.round(correct/total*100);
-  const passed  = score >= c.passingScore;
-  const prog    = getProg(ME.id, c.id);
-  const attempts= (prog.attempts||0)+1;
-  setProg(ME.id, c.id, {
-    status:  passed ? "completed" : "in_progress",
-    score:   passed ? Math.max(score, prog.score||0) : prog.score,
-    attempts,
+// ── Usuarios — CRUD ────────────────────────────────────────
+function getUsersDB() {
+  const stored = localStorage.getItem("intseg_users");
+  if (stored) return JSON.parse(stored);
+  // Seed inicial con los usuarios base
+  const seed = PLAIN_USERS.map((u,i) => ({
+    id: "u"+(i+1),
+    nombre: u.nombre,
+    user: u.user,
+    pass: u.pass,
+    role: u.role,
+    status: "activo",
+    createdAt: new Date().toISOString()
+  }));
+  localStorage.setItem("intseg_users", JSON.stringify(seed));
+  return seed;
+}
+function saveUsersDB(users) {
+  localStorage.setItem("intseg_users", JSON.stringify(users));
+}
+
+function renderAdminUsers(){
+  const keys = Object.keys(COURSE_CONTENT);
+  const users = getUsersDB();
+
+  let html = `<div class="userTable">
+    <div class="userTable__head">
+      <div>Nombre</div><div>Usuario</div><div>Rol</div><div>Estado</div>
+      ${keys.map(k=>`<div>${COURSE_CONTENT[k].badge.replace("Certificación ","").replace("Seguridad Patrimonial","Patrimonial")}</div>`).join("")}
+      <div>Acciones</div>
+    </div>`;
+
+  users.forEach(u => {
+    const prog = u.user === currentUser?.user ? getAllProgress() : (DEMO_PROGRESS[u.user] || {});
+    html += `<div class="userTable__row ${u.status==='inactivo'?'userTable__row--inactive':''}">
+      <div class="userTable__name">
+        <span class="userAvatar ${u.status==='inactivo'?'userAvatar--inactive':''}">${u.nombre.charAt(0)}</span>
+        <span>${u.nombre}</span>
+      </div>
+      <div style="font-size:12px;color:#6b7280">${u.user}</div>
+      <div><span class="roleBadge roleBadge--${u.role}">${u.role}</span></div>
+      <div><span class="statusPill ${u.status==='activo'?'statusPill--active':'statusPill--inactive'}">${u.status}</span></div>
+      ${keys.map(k=>{
+        const p = prog[k];
+        if(!p) return `<div class="progCell progCell--none">—</div>`;
+        return `<div class="progCell ${p.passed?"progCell--pass":"progCell--fail"}">${p.passed?"✅":"❌"} ${p.score}/10</div>`;
+      }).join("")}
+      <div class="actionBtns">
+        <button class="btnAction btnAction--edit" onclick="openUserModal('${u.id}')">✏️</button>
+        <button class="btnAction ${u.status==='activo'?'btnAction--deact':'btnAction--act'}" onclick="toggleUserStatus('${u.id}')">${u.status==='activo'?'🔒':'🔓'}</button>
+        ${u.user!=='admin'?`<button class="btnAction btnAction--del" onclick="deleteUser('${u.id}')">🗑️</button>`:''}
+      </div>
+    </div>`;
   });
-  getModalInner().innerHTML = `
-    <div style="padding:28px;text-align:center;">
-      <div style="font-size:52px;margin-bottom:8px;">${passed?"🏆":"📖"}</div>
-      <h2 style="margin:0 0 4px;color:${passed?"#16a34a":"#dc2626"};">${passed?"¡Aprobado!":"No aprobado"}</h2>
-      <div style="font-size:48px;font-weight:800;color:${passed?"#16a34a":"#dc2626"};line-height:1.1;margin:8px 0;">${score}%</div>
-      <p style="color:#94a3b8;font-size:13px;margin:0 0 20px;">mínimo requerido: ${c.passingScore}%</p>
-      <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:18px;text-align:left;font-size:13px;color:#64748b;">
-        <p style="margin:0 0 4px;">Correctas: <strong style="color:#1e293b;">${correct} de ${total}</strong></p>
-        <p style="margin:0;">Intentos: <strong style="color:#1e293b;">${attempts}</strong></p>
-      </div>
-      ${!passed?`<p style="font-size:13px;background:#fef3c7;color:#92400e;padding:10px;border-radius:8px;margin-bottom:18px;">Necesitas ${c.passingScore}% para acreditar. Puedes repetir cuando quieras.</p>`:""}
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        ${!passed?`<button onclick="openEval()" style="background:#003d6b;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">Repetir examen</button>`:""}
-        <button onclick="closeModal()" style="background:${passed?"#003d6b":"#e2e8f0"};color:${passed?"#fff":"#1e293b"};border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-weight:600;">Cerrar</button>
-      </div>
-    </div>`;
-  const btnEval = document.getElementById("btnEval");
-  if (btnEval && passed) btnEval.textContent = `Repetir evaluación (último: ${score}%)`;
-  buildCatalog();
+  html += "</div>";
+  document.getElementById("adminUserTable").innerHTML = html;
 }
 
-function closeModal() {
-  document.getElementById("modalOverlay").classList.add("hidden");
-  _quiz = null;
+function openUserModal(id) {
+  const isNew = !id;
+  document.getElementById("modalUsuarioTitle").textContent = isNew ? "Nuevo usuario" : "Editar usuario";
+  document.getElementById("editUserId").value = id || "";
+  document.getElementById("modalUsuarioError").classList.add("hidden");
+
+  if (!isNew) {
+    const u = getUsersDB().find(x => x.id === id);
+    if (!u) return;
+    document.getElementById("editUserNombre").value = u.nombre;
+    document.getElementById("editUserUser").value   = u.user;
+    document.getElementById("editUserPass").value   = u.pass;
+    document.getElementById("editUserRole").value   = u.role;
+    document.getElementById("editUserStatus").value = u.status;
+  } else {
+    document.getElementById("editUserNombre").value = "";
+    document.getElementById("editUserUser").value   = "";
+    document.getElementById("editUserPass").value   = "";
+    document.getElementById("editUserRole").value   = "guardia";
+    document.getElementById("editUserStatus").value = "activo";
+  }
+  document.getElementById("modalUsuario").classList.remove("hidden");
 }
 
-// ──────────────────────────────────────────────────────────────
-// 10. ADMIN STATS
-// ──────────────────────────────────────────────────────────────
-
-function refreshAdminStats() {
-  // Solo actualizar el campo de bienvenida; las stats en tarjetas son difíciles
-  // de identificar sin ver el HTML real — se deja como mejora si se añaden data-stat
-  const el = document.getElementById("adminWelcome");
-  if (el && ME) el.textContent = "Bienvenido, " + ME.name;
+function closeUserModal() {
+  document.getElementById("modalUsuario").classList.add("hidden");
 }
 
-// ──────────────────────────────────────────────────────────────
-// 11. GESTIÓN DE USUARIOS
-// ──────────────────────────────────────────────────────────────
+function saveUserModal() {
+  const id      = document.getElementById("editUserId").value;
+  const nombre  = document.getElementById("editUserNombre").value.trim();
+  const user    = document.getElementById("editUserUser").value.trim().toLowerCase();
+  const pass    = document.getElementById("editUserPass").value.trim();
+  const role    = document.getElementById("editUserRole").value;
+  const status  = document.getElementById("editUserStatus").value;
+  const errEl   = document.getElementById("modalUsuarioError");
 
-const _s = "width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;box-sizing:border-box;";
-const _rl = { admin:"Administrador", maestro:"Instructor", guardia:"Guardia" };
+  if (!nombre || !user || !pass) {
+    errEl.textContent = "Todos los campos son obligatorios.";
+    errEl.classList.remove("hidden"); return;
+  }
+  if (pass.length < 6) {
+    errEl.textContent = "La contraseña debe tener al menos 6 caracteres.";
+    errEl.classList.remove("hidden"); return;
+  }
 
-function buildUsersView() {
-  const view = document.getElementById("ia-dv-users");
-  if (!view) return;
-  view.innerHTML = `
-    <div style="padding:20px;max-width:820px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <h2 style="margin:0;color:#003d6b;font-size:20px;">👥 Gestión de Usuarios</h2>
-        <button onclick="toggleAddUserForm()" style="background:#ff8c00;color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">+ Nuevo usuario</button>
-      </div>
-      <div id="ia-uform"></div>
-      <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:520px;">
-          <thead><tr style="background:#003d6b;color:#fff;">
-            <th style="padding:12px 16px;text-align:left;">Nombre</th>
-            <th style="padding:12px 16px;text-align:left;">Usuario</th>
-            <th style="padding:12px 16px;text-align:left;">Rol</th>
-            <th style="padding:12px 16px;text-align:center;">Estado</th>
-            <th style="padding:12px 16px;text-align:center;">Acciones</th>
-          </tr></thead>
-          <tbody>
-            ${S.users.map((u,i) => `
-              <tr style="background:${i%2===0?"#f8fafc":"#fff"};border-bottom:1px solid #f1f5f9;">
-                <td style="padding:12px 16px;font-weight:500;">${u.name}</td>
-                <td style="padding:12px 16px;color:#64748b;font-family:monospace;">${u.user}</td>
-                <td style="padding:12px 16px;">
-                  <span style="background:${u.role==="admin"?"#003d6b":u.role==="maestro"?"#7c3aed":"#0369a1"};color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${_rl[u.role]||u.role}</span>
-                </td>
-                <td style="padding:12px 16px;text-align:center;">
-                  <span style="background:${u.active?"#dcfce7":"#fee2e2"};color:${u.active?"#16a34a":"#dc2626"};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">${u.active?"Activo":"Inactivo"}</span>
-                </td>
-                <td style="padding:12px 16px;text-align:center;white-space:nowrap;">
-                  <button onclick="toggleUserStatus('${u.id}')"
-                    style="background:${u.active?"#fee2e2":"#dcfce7"};color:${u.active?"#dc2626":"#16a34a"};border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-right:4px;">
-                    ${u.active?"Desactivar":"Activar"}
-                  </button>
-                  ${u.id!==ME?.id?`<button onclick="deleteUser('${u.id}')" style="background:#f1f5f9;color:#64748b;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;">Eliminar</button>`:""}
-                </td>
-              </tr>`).join("")}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-}
+  const users = getUsersDB();
+  const dupUser = users.find(x => x.user === user && x.id !== id);
+  if (dupUser) {
+    errEl.textContent = "Ese nombre de usuario ya existe.";
+    errEl.classList.remove("hidden"); return;
+  }
 
-function toggleAddUserForm() {
-  const c = document.getElementById("ia-uform");
-  if (!c) return;
-  if (c.innerHTML.trim()) { c.innerHTML=""; return; }
-  c.innerHTML = `
-    <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-      <h3 style="margin:0 0 14px;color:#003d6b;font-size:15px;">Nuevo Usuario</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Nombre completo</label>
-          <input id="ia-nu-name" placeholder="Ej: Juan Martínez" style="${_s}"></div>
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Usuario (login)</label>
-          <input id="ia-nu-user" placeholder="Ej: guardia04" style="${_s}"></div>
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Contraseña (mín. 6 caracteres)</label>
-          <input id="ia-nu-pass" type="password" placeholder="••••••" style="${_s}"></div>
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Rol</label>
-          <select id="ia-nu-role" style="${_s}">
-            <option value="guardia">Guardia</option>
-            <option value="maestro">Instructor</option>
-            <option value="admin">Administrador</option>
-          </select></div>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="addUser()" style="background:#003d6b;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">Guardar</button>
-        <button onclick="document.getElementById('ia-uform').innerHTML=''" style="background:#f1f5f9;color:#64748b;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Cancelar</button>
-      </div>
-    </div>`;
-}
+  if (id) {
+    // Editar
+    const idx = users.findIndex(x => x.id === id);
+    if (idx > -1) Object.assign(users[idx], { nombre, user, pass, role, status });
+  } else {
+    // Crear
+    users.push({ id: "u"+Date.now(), nombre, user, pass, role, status, createdAt: new Date().toISOString() });
+  }
 
-function addUser() {
-  const name = document.getElementById("ia-nu-name")?.value.trim();
-  const user = document.getElementById("ia-nu-user")?.value.trim();
-  const pass = document.getElementById("ia-nu-pass")?.value.trim();
-  const role = document.getElementById("ia-nu-role")?.value;
-  if (!name||!user||!pass||pass.length<6) { toast("Completa todos los campos. Contraseña mín. 6 caracteres.","error"); return; }
-  if (S.users.find(u=>u.user===user)) { toast("Ese nombre de usuario ya existe.","error"); return; }
-  S.users.push({ id:"u"+Date.now(), user, pass, role, name, active:true });
-  saveState();
-  toast("Usuario creado: "+name,"success");
-  buildUsersView();
+  saveUsersDB(users);
+  closeUserModal();
+  renderAdminUsers();
+  renderAdminDashboard();
+  toast("✅ Usuario guardado correctamente");
 }
 
 function toggleUserStatus(id) {
-  const u = S.users.find(x=>x.id===id);
-  if (!u||u.id===ME?.id) { toast("No puedes desactivar tu propio usuario.","error"); return; }
-  u.active = !u.active;
-  saveState();
-  toast(`${u.name} ${u.active?"activado":"desactivado"}.`, u.active?"success":"info");
-  buildUsersView();
+  const users = getUsersDB();
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  if (u.user === "admin") { toast("No puedes desactivar al administrador"); return; }
+  u.status = u.status === "activo" ? "inactivo" : "activo";
+  saveUsersDB(users);
+  renderAdminUsers();
+  renderAdminDashboard();
+  toast(`Usuario ${u.status === "activo" ? "activado" : "desactivado"}`);
 }
 
 function deleteUser(id) {
-  const u = S.users.find(x=>x.id===id);
-  if (!u||u.id===ME?.id) { toast("No puedes eliminar tu propio usuario.","error"); return; }
-  if (!confirm(`¿Eliminar a "${u.name}"? Esta acción no se puede deshacer.`)) return;
-  S.users = S.users.filter(x=>x.id!==id);
-  saveState();
-  toast("Usuario eliminado.","info");
-  buildUsersView();
+  const users = getUsersDB();
+  const u = users.find(x => x.id === id);
+  if (!u) return;
+  if (u.user === "admin") { toast("No puedes eliminar al administrador"); return; }
+  if (!confirm(`¿Eliminar a ${u.nombre}? Esta acción no se puede deshacer.`)) return;
+  saveUsersDB(users.filter(x => x.id !== id));
+  renderAdminUsers();
+  renderAdminDashboard();
+  toast("🗑️ Usuario eliminado");
 }
 
-// ──────────────────────────────────────────────────────────────
-// 12. GESTIÓN DE CURSOS
-// ──────────────────────────────────────────────────────────────
+document.getElementById("btnCancelUser").addEventListener("click", closeUserModal);
+document.getElementById("btnSaveUser").addEventListener("click", saveUserModal);
 
-function buildCourseAdminView() {
-  const view = document.getElementById("ia-dv-courseAdmin");
-  if (!view) return;
-  const compl  = cid => Object.values(S.progress).filter(u=>u[cid]?.status==="completed").length;
-  const inProg = cid => Object.values(S.progress).filter(u=>u[cid]?.status==="in_progress").length;
-  view.innerHTML = `
-    <div style="padding:20px;max-width:820px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <h2 style="margin:0;color:#003d6b;font-size:20px;">📚 Gestión de Cursos</h2>
-        <button onclick="showCourseForm(null)" style="background:#ff8c00;color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">+ Nuevo curso</button>
+function renderAdminCourses(){
+  const keys=Object.keys(COURSE_CONTENT);
+  let html="";
+  keys.forEach(k=>{
+    const c=COURSE_CONTENT[k];
+    html+=`<div class="adminCourseCard">
+      <div class="adminCourseCard__img"><img src="${c.img}" alt="${c.title}"/></div>
+      <div class="adminCourseCard__body">
+        <div class="adminCourseCard__badge">${c.badge}</div>
+        <div class="adminCourseCard__title">${c.title}</div>
+        <div class="adminCourseCard__meta">👤 ${c.instructor} &nbsp;|&nbsp; ⏱ ${c.duration}</div>
+        <div class="adminCourseCard__desc">${c.desc}</div>
       </div>
-      <div id="ia-cform"></div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        ${S.courses.map(c=>`
-          <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;gap:14px;align-items:flex-start;">
-            <img src="${c.img}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">
-            <div style="flex:1;min-width:0;">
-              <span style="font-size:11px;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:20px;">${c.badge}</span>
-              <p style="margin:6px 0 2px;font-weight:600;font-size:14px;">${c.title}</p>
-              <p style="margin:0 0 8px;font-size:12px;color:#64748b;">${c.instructor} · ${c.duration}</p>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
-                <span style="background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;">✅ ${compl(c.id)} completados</span>
-                <span style="background:#fff7ed;color:#c2410c;padding:2px 8px;border-radius:20px;">📖 ${inProg(c.id)} en curso</span>
-                <span style="background:#f8fafc;color:#64748b;padding:2px 8px;border-radius:20px;">❓ ${c.questions?.length||0} preguntas</span>
-              </div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
-              <button onclick="showCourseForm('${c.id}')" style="background:#003d6b;color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Editar</button>
-              <button onclick="deleteCourse('${c.id}')" style="background:#fee2e2;color:#dc2626;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;">Eliminar</button>
-            </div>
-          </div>`).join("")}
+      <div class="adminCourseCard__actions">
+        <button class="btnEdit" onclick="openEditModal('${k}')">✏️ Editar</button>
+        <button class="btnNavy" data-go="detail" data-course="${k}">Ver curso</button>
       </div>
     </div>`;
-}
-
-function showCourseForm(courseId) {
-  const c = courseId ? S.courses.find(x=>x.id===courseId) : null;
-  const container = document.getElementById("ia-cform");
-  if (!container) return;
-  if (container.innerHTML.trim() && !courseId) { container.innerHTML=""; return; }
-  container.innerHTML = `
-    <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-      <h3 style="margin:0 0 14px;color:#003d6b;font-size:15px;">${c?"Editar curso":"Nuevo Curso"}</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Título del curso</label>
-          <input id="ia-cf-title" value="${c?.title||""}" style="${_s}"></div>
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Instructor</label>
-          <input id="ia-cf-instructor" value="${c?.instructor||""}" style="${_s}"></div>
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Categoría / Badge</label>
-          <input id="ia-cf-badge" value="${c?.badge||""}" style="${_s}"></div>
-        <div><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Duración</label>
-          <input id="ia-cf-dur" value="${c?.duration||""}" placeholder="Ej: 3 horas" style="${_s}"></div>
-      </div>
-      <div style="margin-bottom:12px;"><label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Descripción</label>
-        <textarea id="ia-cf-desc" rows="3" style="${_s}">${c?.desc||""}</textarea></div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="saveCourse('${courseId||""}')" style="background:#003d6b;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">${c?"Actualizar":"Crear curso"}</button>
-        <button onclick="document.getElementById('ia-cform').innerHTML=''" style="background:#f1f5f9;color:#64748b;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Cancelar</button>
-      </div>
-    </div>`;
-  container.scrollIntoView({behavior:"smooth"});
-}
-
-function saveCourse(courseId) {
-  const title=document.getElementById("ia-cf-title")?.value.trim();
-  const inst =document.getElementById("ia-cf-instructor")?.value.trim();
-  const badge=document.getElementById("ia-cf-badge")?.value.trim();
-  const dur  =document.getElementById("ia-cf-dur")?.value.trim();
-  const desc =document.getElementById("ia-cf-desc")?.value.trim();
-  if (!title||!inst) { toast("Título e instructor son obligatorios.","error"); return; }
-  if (courseId) {
-    const c = S.courses.find(x=>x.id===courseId);
-    if (c) Object.assign(c,{title,instructor:inst,badge,duration:dur,desc});
-    toast("Curso actualizado.","success");
-  } else {
-    S.courses.push({id:"c"+Date.now(),badge,title,instructor:inst,duration:dur,img:"avatar-guardia.png",desc,passingScore:80,modules:[],questions:[]});
-    toast("Curso creado.","success");
-  }
-  saveState();
-  buildCourseAdminView();
-}
-
-function deleteCourse(id) {
-  const c = S.courses.find(x=>x.id===id);
-  if (!c) return;
-  if (!confirm(`¿Eliminar "${c.title}"? Esta acción no se puede deshacer.`)) return;
-  S.courses = S.courses.filter(x=>x.id!==id);
-  saveState();
-  toast("Curso eliminado.","info");
-  buildCourseAdminView();
-}
-
-// ──────────────────────────────────────────────────────────────
-// 13. REPORTES
-// ──────────────────────────────────────────────────────────────
-
-function buildReportsView() {
-  const view = document.getElementById("ia-dv-reports");
-  if (!view) return;
-  const guardias = S.users.filter(u=>u.active&&u.role==="guardia");
-  const rows = guardias.map(u => {
-    const progs   = S.progress[u.id]||{};
-    const compl   = Object.values(progs).filter(p=>p.status==="completed").length;
-    const inprog  = Object.values(progs).filter(p=>p.status==="in_progress").length;
-    const total   = S.courses.length;
-    const pct     = total ? Math.round(compl/total*100) : 0;
-    const best    = Object.values(progs).reduce((a,p)=>Math.max(a,p.score||0),0);
-    return {u,compl,inprog,total,pct,best};
   });
-  const avg   = rows.length ? Math.round(rows.reduce((s,r)=>s+r.pct,0)/rows.length) : 0;
-  const totalC= rows.reduce((s,r)=>s+r.compl,0);
-  view.innerHTML = `
-    <div style="padding:20px;max-width:900px;margin:0 auto;">
-      <h2 style="margin:0 0 20px;color:#003d6b;font-size:20px;">📊 Reportes de Capacitación</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px;">
-        ${[["👥","Guardias activos",guardias.length,"#003d6b"],["📚","Cursos",S.courses.length,"#0369a1"],
-           ["✅","Completados",totalC,"#16a34a"],["📈","Avance promedio",avg+"%","#ff8c00"]]
-          .map(([ic,lb,val,col])=>`
-            <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;">
-              <div style="font-size:26px;">${ic}</div>
-              <div style="font-size:24px;font-weight:800;color:${col};">${val}</div>
-              <div style="font-size:11px;color:#64748b;margin-top:2px;">${lb}</div>
-            </div>`).join("")}
-      </div>
-      <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;">
-          <h3 style="margin:0;color:#003d6b;font-size:15px;">Avance por Guardia</h3>
-        </div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:480px;">
-            <thead><tr style="background:#f8fafc;">
-              ${["Nombre","Completados","En curso","Avance","Mejor nota"].map(h=>
-                `<th style="padding:12px 16px;text-align:${h==="Avance"||h==="Nombre"?"left":"center"};color:#64748b;font-weight:600;font-size:13px;">${h}</th>`).join("")}
-            </tr></thead>
-            <tbody>
-              ${rows.length===0?`<tr><td colspan="5" style="padding:24px;text-align:center;color:#94a3b8;">Sin datos aún.</td></tr>`:
-              rows.map((r,i)=>`
-                <tr style="border-bottom:1px solid #f1f5f9;background:${i%2===0?"#fff":"#f8fafc"};">
-                  <td style="padding:12px 16px;font-weight:500;">${r.u.name}</td>
-                  <td style="padding:12px 16px;text-align:center;"><span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">${r.compl}/${r.total}</span></td>
-                  <td style="padding:12px 16px;text-align:center;color:#64748b;">${r.inprog}</td>
-                  <td style="padding:12px 20px;">
-                    <div style="background:#e2e8f0;border-radius:4px;height:8px;min-width:80px;">
-                      <div style="background:${r.pct===100?"#16a34a":r.pct>=50?"#ff8c00":"#003d6b"};height:8px;border-radius:4px;width:${r.pct}%;"></div>
-                    </div>
-                    <p style="font-size:11px;color:#64748b;margin:3px 0 0;">${r.pct}%</p>
-                  </td>
-                  <td style="padding:12px 16px;text-align:center;font-weight:600;color:${r.best>=80?"#16a34a":"#64748b"};">${r.best?r.best+"%":"—"}</td>
-                </tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  document.getElementById("adminCourseList").innerHTML=html;
+}
+
+function renderAdminEvals(){
+  const keys=Object.keys(COURSE_CONTENT);
+  const users=PLAIN_USERS.filter(u=>u.role!=="admin");
+  let rows=[];
+  users.forEach(u=>{
+    const prog=getAdminProgress(u.user);
+    keys.forEach(k=>{
+      if(prog[k]){
+        const date=prog[k].date?new Date(prog[k].date).toLocaleDateString("es-MX"):"—";
+        rows.push({nombre:u.nombre,curso:COURSE_CONTENT[k].title,score:prog[k].score,passed:prog[k].passed,date});
+      }
+    });
+  });
+
+  if(!rows.length){document.getElementById("adminEvalTable").innerHTML=`<div class="emptyState">Aún no hay evaluaciones registradas.</div>`;return;}
+
+  let html=`<div class="evalTable">
+    <div class="evalTable__head"><div>Usuario</div><div>Curso</div><div>Puntaje</div><div>Estado</div><div>Fecha</div></div>`;
+  rows.forEach(r=>{
+    html+=`<div class="evalTable__row">
+      <div>${r.nombre}</div>
+      <div class="evalTable__curso">${r.curso}</div>
+      <div><strong>${r.score}/10</strong></div>
+      <div><span class="statusBadge ${r.passed?"statusBadge--pass":"statusBadge--fail"}">${r.passed?"Aprobado":"No aprobado"}</span></div>
+      <div>${r.date}</div>
     </div>`;
+  });
+  html+="</div>";
+  document.getElementById("adminEvalTable").innerHTML=html;
 }
 
-// ──────────────────────────────────────────────────────────────
-// 14. AJUSTES
-// ──────────────────────────────────────────────────────────────
-
-function buildSettingsView() {
-  const view = document.getElementById("ia-dv-settings");
-  if (!view) return;
-  view.innerHTML = `
-    <div style="padding:20px;max-width:560px;margin:0 auto;">
-      <h2 style="margin:0 0 20px;color:#003d6b;font-size:20px;">⚙️ Ajustes</h2>
-      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px;">
-        <h3 style="margin:0 0 12px;color:#003d6b;font-size:15px;">Mi perfil</h3>
-        <p style="margin:0 0 6px;font-size:14px;"><strong>Nombre:</strong> ${ME?.name}</p>
-        <p style="margin:0 0 6px;font-size:14px;"><strong>Usuario:</strong> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">${ME?.user}</code></p>
-        <p style="margin:0;font-size:14px;"><strong>Rol:</strong> ${_rl[ME?.role]||""}</p>
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px;">
-        <h3 style="margin:0 0 12px;color:#003d6b;font-size:15px;">Cambiar contraseña</h3>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <input id="ia-s-old"  type="password" placeholder="Contraseña actual" style="${_s}">
-          <input id="ia-s-new"  type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" style="${_s}">
-          <input id="ia-s-con"  type="password" placeholder="Confirmar nueva contraseña" style="${_s}">
-          <button onclick="changePassword()" style="background:#003d6b;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;align-self:flex-start;">Actualizar contraseña</button>
-        </div>
-      </div>
-      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-        <h3 style="margin:0 0 8px;color:#dc2626;font-size:15px;">Zona de riesgo</h3>
-        <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Elimina todo el progreso y restaura los datos de fábrica.</p>
-        <button onclick="resetApp()" style="background:#fee2e2;color:#dc2626;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">Restablecer datos de la app</button>
-      </div>
-    </div>`;
+// ── Editar curso ───────────────────────────────────────────
+function openEditModal(key){
+  const c=COURSE_CONTENT[key];
+  document.getElementById("editCourseKey").value=key;
+  document.getElementById("editTitle").value=c.title;
+  document.getElementById("editBadge").value=c.badge;
+  document.getElementById("editInstructor").value=c.instructor;
+  document.getElementById("editDuration").value=c.duration;
+  document.getElementById("editDesc").value=c.desc;
+  document.getElementById("modalCurso").classList.remove("hidden");
 }
-
-function changePassword() {
-  const old = document.getElementById("ia-s-old")?.value;
-  const nw  = document.getElementById("ia-s-new")?.value;
-  const con = document.getElementById("ia-s-con")?.value;
-  if (!old||!nw||!con)    { toast("Completa todos los campos.","error"); return; }
-  if (old !== ME.pass)    { toast("La contraseña actual no es correcta.","error"); return; }
-  if (nw.length < 6)      { toast("La nueva contraseña debe tener mínimo 6 caracteres.","error"); return; }
-  if (nw !== con)         { toast("Las contraseñas no coinciden.","error"); return; }
-  const u = S.users.find(x=>x.id===ME.id);
-  if (u) { u.pass=nw; ME.pass=nw; saveState(); }
-  toast("Contraseña actualizada.","success");
-  ["ia-s-old","ia-s-new","ia-s-con"].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
+function closeEditModal(){ document.getElementById("modalCurso").classList.add("hidden"); }
+function saveEditModal(){
+  const key=document.getElementById("editCourseKey").value;
+  COURSE_CONTENT[key].title      = document.getElementById("editTitle").value.trim();
+  COURSE_CONTENT[key].badge      = document.getElementById("editBadge").value.trim();
+  COURSE_CONTENT[key].instructor = document.getElementById("editInstructor").value.trim();
+  COURSE_CONTENT[key].duration   = document.getElementById("editDuration").value.trim();
+  COURSE_CONTENT[key].desc       = document.getElementById("editDesc").value.trim();
+  closeEditModal();
+  renderAdminCourses();
+  refreshCatalog();
+  toast("✅ Curso actualizado correctamente");
 }
+document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
+document.getElementById("btnSaveEdit").addEventListener("click", saveEditModal);
 
-function resetApp() {
-  if (!confirm("¿Restablecer todos los datos? Se eliminará el progreso, usuarios y cursos personalizados.")) return;
-  ["ia_users","ia_courses","ia_progress"].forEach(k=>localStorage.removeItem(k));
-  toast("Datos restablecidos. Recargando...","info");
-  setTimeout(()=>window.location.reload(),1500);
-}
-
-// ──────────────────────────────────────────────────────────────
-// 15. DELEGACIÓN DE EVENTOS GLOBAL
-// ──────────────────────────────────────────────────────────────
-
-document.addEventListener("click", e => {
-  // data-go
-  const go = e.target.closest("[data-go]");
-  if (go) {
-    const dest=go.dataset.go, cid=go.dataset.course;
-    if (dest==="detail"&&cid) { loadDetail(cid); navigate("detail"); }
-    else if (dest==="catalog") { buildCatalog(); navigate("catalog"); }
-    else if (dest==="admin")   { refreshAdminStats(); navigate("admin"); }
-    return;
-  }
-  // data-back
-  const back = e.target.closest("[data-back]");
-  if (back) {
-    const dest = back.dataset.back;
-    if (dest==="catalog") { buildCatalog(); navigate("catalog"); }
-    else { refreshAdminStats(); navigate("admin"); }
-    return;
-  }
-  // Botones del admin por texto
-  if (ME && (ME.role==="admin"||ME.role==="maestro")) {
-    const btn = e.target.closest("button,[class*='quick'],[class*='card'],[class*='action']");
-    if (btn) {
-      const t = btn.textContent.trim().toLowerCase();
-      if      (t.includes("crear curso"))                                         { buildCourseAdminView(); navigate("courseAdmin"); setTimeout(()=>showCourseForm(null),60); }
-      else if (t.includes("gestionar curso")||t.includes("gestionar cursos"))     { buildCourseAdminView(); navigate("courseAdmin"); }
-      else if (t.includes("gestión de usuario")||t.includes("gestionar usuario")) { buildUsersView(); navigate("users"); }
-      else if (t.includes("reporte")&&!btn.closest("#ia-dv-reports"))             { buildReportsView(); navigate("reports"); }
-    }
-  }
+// ── Admin tabs ─────────────────────────────────────────────
+document.querySelectorAll(".adminTab").forEach(tab=>{
+  tab.addEventListener("click",function(){
+    document.querySelectorAll(".adminTab").forEach(t=>t.classList.remove("adminTab--active"));
+    document.querySelectorAll(".adminTabContent").forEach(c=>c.classList.add("hidden"));
+    this.classList.add("adminTab--active");
+    document.getElementById("atab-"+this.dataset.atab).classList.remove("hidden");
+  });
 });
 
-// ──────────────────────────────────────────────────────────────
-// 16. LISTENERS ESTÁTICOS
-// ──────────────────────────────────────────────────────────────
-
-document.getElementById("btnLogin")?.addEventListener("click", doLogin);
-
-document.addEventListener("keydown", e => {
-  if (e.key==="Enter" && !document.getElementById("viewLogin").classList.contains("hidden")) doLogin();
+// ── Eventos generales ──────────────────────────────────────
+document.addEventListener("click",e=>{
+  const go=e.target.closest("[data-go]");
+  if(go){
+    const t=go.dataset.go,c=go.dataset.course;
+    if(t==="detail"&&c){loadDetail(c);navigate("detail");}
+    else if(t==="catalog"){refreshCatalog();navigate("catalog");}
+    else if(t==="admin")navigate("admin");
+    return;
+  }
+  const back=e.target.closest("[data-back]");
+  if(back){
+    const dest=back.dataset.back;
+    if(dest==="catalog"){refreshCatalog();navigate("catalog");}
+    else if(dest==="detail")navigate("detail");
+    else{refreshCatalog();navigate("catalog");}
+    return;
+  }
+  if(e.target===document.getElementById("modalCurso")) closeEditModal();
 });
-
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", function() {
+document.getElementById("btnEval").addEventListener("click",startQuiz);
+document.getElementById("btnNextQ").addEventListener("click",nextQuestion);
+document.getElementById("btnRetry").addEventListener("click",()=>{loadDetail(currentCourseKey);navigate("detail");});
+document.getElementById("btnLogin").addEventListener("click",doLogin);
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&!document.getElementById("viewLogin").classList.contains("hidden"))doLogin();});
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click",function(){
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("tab--active"));
     this.classList.add("tab--active");
-    const f = this.dataset.filter;
-    document.querySelectorAll("#courseList .courseCard").forEach(card => {
-      card.style.display = (!f||f==="all"||card.dataset.status===f) ? "" : "none";
+    const f=this.dataset.filter;
+    document.querySelectorAll("#courseList .courseCard").forEach(card=>{
+      card.style.display=(f==="all"||card.dataset.status===f)?"":"none";
     });
   });
 });
-
-document.getElementById("searchInput")?.addEventListener("input", function() {
-  const q = this.value.toLowerCase();
-  document.querySelectorAll("#courseList .courseCard").forEach(card => {
-    const title = card.querySelector(".courseCard__title")?.textContent.toLowerCase()||"";
-    card.style.display = title.includes(q) ? "" : "none";
+document.getElementById("searchInput").addEventListener("input",function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll("#courseList .courseCard").forEach(card=>{
+    const t=card.querySelector(".courseCard__title")?.textContent.toLowerCase()||"";
+    card.style.display=t.includes(q)?"":"none";
   });
 });
-
-document.getElementById("btnEval")?.addEventListener("click", openEval);
-document.getElementById("btnModalClose")?.addEventListener("click", closeModal);
-document.getElementById("modalOverlay")?.addEventListener("click", e => {
-  if (e.target===document.getElementById("modalOverlay")) closeModal();
-});
-
-// ──────────────────────────────────────────────────────────────
-// 17. INICIO
-// ──────────────────────────────────────────────────────────────
 
 navigate("login");

@@ -1,241 +1,308 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>IntSeg Academy</title>
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>IntSeg Academy</title>
+<link rel="stylesheet" href="./styles.css"/>
 </head>
 <body>
 
-  <!-- TOAST -->
-  <div id="toast" class="toast hidden"></div>
+<div id="toast" class="toast hidden"></div>
 
-  <!-- ════════════════════════════════
-       VIEW: LOGIN (fuera del shell)
-  ═════════════════════════════════ -->
-  <section id="viewLogin">
-    <div class="loginWrap">
-      <div class="loginLogo">
-        <img src="logo-intseg-nobg.png" alt="IntSeg Academy" class="loginLogoImg" />
+<!-- ══════════════ LOGIN ══════════════ -->
+<section id="viewLogin">
+  <div class="loginWrap">
+    <div class="loginLogo"><img src="logo-intseg-nobg.png" alt="IntSeg Academy" class="loginLogoImg"/></div>
+    <div class="loginCard">
+      <div class="loginCardTitle">Login</div>
+      <div class="loginError hidden" id="loginError">Usuario o contraseña incorrectos.</div>
+      <label class="loginLabel">Usuario:</label>
+      <input class="loginInput" id="inputUser" type="text" autocomplete="username"/>
+      <label class="loginLabel">Contraseña:</label>
+      <input class="loginInput" id="inputPass" type="password" autocomplete="current-password"/>
+      <button class="loginBtn" id="btnLogin">Ingresar</button>
+    </div>
+    <div class="loginFooter">by <strong>SafeR Technologies</strong></div>
+  </div>
+</section>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div id="appShell" class="app-shell hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar hidden" id="sidebar">
+    <div class="sidebar__logo">
+      <img src="logo-intseg-nobg.png" alt="IntSeg"/>
+      <span>Int'Seg<br>Academy</span>
+    </div>
+    <nav class="sidebar__nav">
+      <button class="sidebar__item active" id="sideInicio" onclick="navigate('catalog')">
+        <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg>Inicio
+      </button>
+      <button class="sidebar__item" id="sideCursos" onclick="navigate('catalog')">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg>Cursos
+      </button>
+      <button class="sidebar__item" id="sideAdmin" onclick="navigate('admin')">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>Admin
+      </button>
+      <button class="sidebar__item" onclick="toast('Ajustes próximamente')">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg>Ajustes
+      </button>
+    </nav>
+    <div class="sidebar__footer">
+      <button class="sidebar__logout" onclick="doLogout()">
+        <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════ CATÁLOGO ══════════════ -->
+  <section id="viewCatalog" class="view hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <img class="brand__mini" src="logo-intseg-nobg.png" alt="IntSeg"/>
+        <div class="topbar__title">Catálogo de Cursos</div>
       </div>
-      <div class="loginCard">
-        <div class="loginCardTitle">Login</div>
-        <div class="loginError hidden" id="loginError">Usuario o contraseña incorrectos.</div>
-        <label class="loginLabel">Usuario:</label>
-        <input class="loginInput" id="inputUser" type="text" autocomplete="username" />
-        <label class="loginLabel">Contraseña:</label>
-        <input class="loginInput" id="inputPass" type="password" autocomplete="current-password" />
-        <button class="loginBtn" id="btnLogin">Ingresar</button>
+    </header>
+    <div class="page-content">
+      <div class="search">
+        <svg viewBox="0 0 24 24" class="search__icon"><path d="M10 4a6 6 0 104.472 10.03l3.75 3.75 1.414-1.414-3.75-3.75A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
+        <input class="search__input" id="searchInput" placeholder="Buscar cursos..."/>
       </div>
-      <div class="loginFooter">by <strong>SafeR Technologies</strong></div>
+      <div class="tabs">
+        <button class="tab tab--active" data-filter="all">Todos</button>
+        <button class="tab" data-filter="progress">En curso</button>
+        <button class="tab" data-filter="done">Completados</button>
+      </div>
+      <div class="list" id="courseList">
+        <article class="courseCard" data-status="new" data-course="dc3">
+          <div class="pill">Certificación DC3</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="avatar-guardia.png" alt="Fundamento Legal"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Fundamento Legal de la Seguridad Privada</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="dc3">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="iso">
+          <div class="pill">Certificación Internacional</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="cover-iso28001.jpg" alt="C-TPAT"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">C-TPAT / OEA: Seguridad en la Cadena de Suministro</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="iso">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="aml">
+          <div class="pill">Seguridad Patrimonial</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="cover-antilavado.jpg" alt="Patrimonial"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Seguridad Patrimonial</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="aml">Ver</button>
+          </div>
+        </article>
+      </div>
+    </div>
+    <nav class="bottomNav">
+      <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
+      <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem" onclick="navigate('admin')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
+      <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+    </nav>
+  </section>
+
+  <!-- ══════════════ DETALLE ══════════════ -->
+  <section id="viewDetail" class="hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="iconBtn" data-back="catalog"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
+        <div class="topbar__title">Detalle del Curso</div>
+      </div>
+    </header>
+    <div class="detailScroll">
+      <div class="pill" id="detBadge"></div>
+      <div class="detailHeader">
+        <div class="detailAvatar" id="detAvatar"><img src="avatar-guardia.png" alt="Curso"/></div>
+        <div class="detailInfo">
+          <div class="detailTitle" id="detTitle"></div>
+          <div class="metaRow">
+            <div class="metaItem"><span class="metaDot"><img src="instructor.jpg" alt=""/></span><span><b>Instructor:</b> <span id="detInstructor"></span></span></div>
+            <div class="metaItem"><svg viewBox="0 0 24 24" class="metaIcon"><path d="M12 7a1 1 0 011 1v4.382l2.447 1.413a1 1 0 01-1 1.732l-2.947-1.7A1 1 0 0111 13V8a1 1 0 011-1zm0-5a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 110 16 8 8 0 010-16z"/></svg><span id="detDuration"></span></div>
+          </div>
+        </div>
+      </div>
+      <p class="detailDesc" id="detDesc"></p>
+      <a class="btnVerPDF hidden" id="btnVerPDF" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM12 17H8v-1h4v1zm4-3H8v-1h8v1zm0-3H8v-1h8v1z"/></svg>
+        Ver presentación original (PDF)
+      </a>
+      <div class="sectionTitle">Contenido del curso</div>
+      <div id="moduleList"></div>
+    </div>
+    <div class="detailFooter">
+      <button class="btnPrimaryWide" id="btnEval">Iniciar evaluación</button>
     </div>
   </section>
 
-  <!-- ════════════════════════════════
-       APP SHELL (sidebar + contenido)
-  ═════════════════════════════════ -->
-  <div id="appShell" class="app-shell hidden">
-
-    <!-- SIDEBAR (visible solo en desktop via CSS) -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar__logo">
-        <img src="logo-intseg-nobg.png" alt="IntSeg" />
-        <span>Int'Seg<br>Academy</span>
+  <!-- ══════════════ QUIZ ══════════════ -->
+  <section id="viewQuiz" class="hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="iconBtn" data-back="detail"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
+        <div class="topbar__title">Evaluación</div>
       </div>
-      <nav class="sidebar__nav">
-        <button class="sidebar__item active" id="sideInicio" onclick="navigate('catalog')">
-          <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg>
-          Inicio
-        </button>
-        <button class="sidebar__item" id="sideCursos" onclick="navigate('catalog')">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg>
-          Cursos
-        </button>
-        <button class="sidebar__item" id="sideUsuarios" onclick="toast('Gestión de usuarios — Sprint 3')">
-          <svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 10-8 0 4 4 0 008 0zm-4 6c-4.418 0-8 2.015-8 4.5V23h16v-1.5c0-2.485-3.582-4.5-8-4.5z"/></svg>
-          Usuarios
-        </button>
-        <button class="sidebar__item" id="sideReportes" onclick="toast('Reportes — Sprint 4')">
-          <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>
-          Reportes
-        </button>
-        <button class="sidebar__item" id="sideAjustes" onclick="toast('Ajustes próximamente')">
-          <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg>
-          Ajustes
-        </button>
-      </nav>
-      <div class="sidebar__footer">
-        <button class="sidebar__logout" onclick="doLogout()">
-          <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg>
-          Cerrar sesión
-        </button>
+    </header>
+    <div class="quizWrap">
+      <div class="quizHeader">
+        <div class="quizCourseName" id="quizCourseTitle"></div>
+        <div class="quizMeta" id="quizProgress">Pregunta 1 de 10</div>
+        <div class="quizBar"><div class="quizBar__fill" id="quizProgressBar" style="width:0%"></div></div>
       </div>
-    </aside>
-
-    <!-- ── VIEW: CATÁLOGO ── -->
-    <section id="viewCatalog" class="view hidden">
-      <header class="topbar">
-        <div class="topbar__left">
-          <img class="brand__mini" src="logo-intseg-nobg.png" alt="IntSeg" />
-          <div class="topbar__title">Catálogo de Cursos</div>
-          <span id="roleBadgeGuardia"></span>
-        </div>
-        <button class="iconBtn" onclick="toast('Búsqueda avanzada próximamente')">
-          <svg viewBox="0 0 24 24" class="icon"><path d="M10 4a6 6 0 104.472 10.03l3.75 3.75 1.414-1.414-3.75-3.75A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
-        </button>
-      </header>
-      <div class="page-content">
-        <div class="search">
-          <svg viewBox="0 0 24 24" class="search__icon"><path d="M10 4a6 6 0 104.472 10.03l3.75 3.75 1.414-1.414-3.75-3.75A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
-          <input class="search__input" id="searchInput" placeholder="Buscar cursos..." />
-        </div>
-        <div class="tabs">
-          <button class="tab tab--active" data-filter="all">Mis cursos</button>
-          <button class="tab" data-filter="all">Todos</button>
-          <button class="tab" data-filter="progress">En curso</button>
-        </div>
-        <div class="list" id="courseList">
-          <article class="courseCard" data-status="new">
-            <div class="pill">Certificación DC3</div>
-            <div class="courseCard__row">
-              <div class="thumb"><img src="avatar-guardia.png" alt="Normatividad" /></div>
-              <div class="courseCard__main">
-                <div class="courseCard__title">Normatividad en Seguridad Privada</div>
-              </div>
-              <button class="btnNavy" data-go="detail" data-course="dc3">Ver detalle</button>
-            </div>
-          </article>
-          <article class="courseCard" data-status="new">
-            <div class="pill pill--lock">Certificación Internacional <span class="lock"><svg viewBox="0 0 24 24" class="icon"><path d="M17 10h-1V8a4 4 0 10-8 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zm-7-2a2 2 0 114 0v2h-4V8z"/></svg></span></div>
-            <div class="courseCard__row">
-              <div class="thumb"><img src="cover-iso28001.jpg" alt="ISO 28001" /></div>
-              <div class="courseCard__main">
-                <div class="courseCard__title">ISO 28001: Seguridad en la Cadena</div>
-                <div class="courseCard__sub">de <i>Susana Ochoa</i></div>
-              </div>
-              <button class="btnNavy" data-go="detail" data-course="iso">Ver detalle</button>
-            </div>
-          </article>
-          <article class="courseCard" data-status="progress">
-            <div class="pill">Certificación OEA</div>
-            <div class="courseCard__row">
-              <div class="thumb"><img src="cover-antilavado.jpg" alt="Antilavado" /></div>
-              <div class="courseCard__main">
-                <div class="courseCard__title">Antilavado de Dinero y Seguridad Patrimonial</div>
-                <div class="progressRow">
-                  <div class="progressText">50% completado</div>
-                  <div class="progressBar"><div class="progressBar__fill"></div></div>
-                </div>
-              </div>
-              <button class="btnNavy" data-go="detail" data-course="aml">Ver detalle</button>
-            </div>
-          </article>
-        </div>
+      <div class="quizBody">
+        <div class="quizQ" id="quizQuestion"></div>
+        <div class="quizOptions" id="quizOptions"></div>
       </div>
-      <!-- Bottom Nav (móvil) -->
-      <nav class="bottomNav">
-        <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
-        <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
-        <button class="navItem" onclick="toast('Usuarios — Sprint 3')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M16 11a4 4 0 10-8 0 4 4 0 008 0zm-4 6c-4.418 0-8 2.015-8 4.5V23h16v-1.5c0-2.485-3.582-4.5-8-4.5z"/></svg><span>Usuarios</span></button>
-        <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
-      </nav>
-    </section>
-
-    <!-- ── VIEW: DETALLE ── -->
-    <section id="viewDetail" class="hidden">
-      <header class="topbar">
-        <div class="topbar__left">
-          <button class="iconBtn" data-back="catalog"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
-          <div class="topbar__title">Detalle del Curso</div>
-        </div>
-      </header>
-      <div class="detailScroll">
-        <div class="pill" id="detBadge">Certificación DC3</div>
-        <div class="detailHeader">
-          <div class="detailAvatar" id="detAvatar"><img src="avatar-guardia.png" alt="Curso" /></div>
-          <div class="detailInfo">
-            <div class="detailTitle" id="detTitle">Normatividad en Seguridad Privada</div>
-            <div class="metaRow">
-              <div class="metaItem"><span class="metaDot"><img src="instructor.jpg" alt="" /></span><span><b>Instructor:</b> <span id="detInstructor">Juan Pérez</span></span></div>
-              <div class="metaItem"><svg viewBox="0 0 24 24" class="metaIcon"><path d="M12 7a1 1 0 011 1v4.382l2.447 1.413a1 1 0 01-1 1.732l-2.947-1.7A1 1 0 0111 13V8a1 1 0 011-1zm0-5a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 110 16 8 8 0 010-16z"/></svg><span id="detDuration">3 horas</span></div>
-            </div>
-          </div>
-        </div>
-        <p class="detailDesc" id="detDesc">Descripción.</p>
-        <div class="sectionTitle">Contenido del curso</div>
-        <div class="moduleList">
-          <div class="moduleItem"><div class="moduleLeft"><span class="checkDot"><svg viewBox="0 0 24 24" class="icon"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5L9 16.2z"/></svg></span><span><b>Módulo 1</b> – Marco legal</span></div><span class="chev">›</span></div>
-          <div class="moduleItem"><div class="moduleLeft"><span class="checkDot"><svg viewBox="0 0 24 24" class="icon"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5L9 16.2z"/></svg></span><span><b>Módulo 2</b> – Procedimientos operativos</span></div><span class="chev">›</span></div>
-          <div class="moduleItem"><div class="moduleLeft"><span class="checkDot"><svg viewBox="0 0 24 24" class="icon"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5L9 16.2z"/></svg></span><span><b>Módulo 3</b> – Manejo de incidentes</span></div><span class="chev">›</span></div>
-        </div>
+      <div class="quizFooter">
+        <button class="btnPrimaryWide hidden" id="btnNextQ">Siguiente →</button>
       </div>
-      <div class="detailFooter">
-        <button class="btnPrimaryWide" id="btnEval">Iniciar evaluación</button>
+    </div>
+  </section>
+
+  <!-- ══════════════ RESULTADO ══════════════ -->
+  <section id="viewResult" class="hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="iconBtn" data-back="catalog"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
+        <div class="topbar__title">Resultado</div>
       </div>
-    </section>
+    </header>
+    <div class="resultWrap">
+      <div class="resultIcon" id="resultIcon">🏅</div>
+      <div class="resultTitle" id="resultTitle">¡Aprobado!</div>
+      <div class="resultScore" id="resultScore"></div>
+      <div class="resultBarWrap"><div class="resultBar"><div class="resultBarFill" id="resultBarFill"></div></div></div>
+      <div class="resultMsg" id="resultMsg"></div>
+      <button class="btnPrimaryWide" id="btnRetry" style="display:none">Reintentar evaluación</button>
+      <button class="btnSecondaryWide" data-back="catalog">← Volver al catálogo</button>
+    </div>
+  </section>
 
-    <!-- ── VIEW: ADMIN ── -->
-    <section id="viewAdmin" class="view hidden">
-      <header class="topbar topbar--flat">
-        <div class="topbar__left">
-          <div class="topbar__title topbar__title--big" id="adminWelcome">Bienvenido</div>
-          <span id="roleBadge"></span>
-        </div>
-      </header>
-      <div class="page-content page-content--admin">
-        <div class="subText">Gestiona los cursos y usuarios.</div>
-        <div class="grid2">
-          <button class="tile tile--orange" onclick="toast('Crear curso — Sprint 3')"><div class="tileIcon">📘</div><div class="tileText">Crear curso</div></button>
-          <button class="tile tile--blue" data-go="catalog"><div class="tileIcon">🛠️</div><div class="tileText">Gestionar cursos</div></button>
-          <button class="tile tile--green" onclick="toast('Gestión de usuarios — Sprint 3')"><div class="tileIcon">👥</div><div class="tileText">Gestión de usuarios</div></button>
-          <button class="tile tile--teal" onclick="toast('Reportes — Sprint 4')"><div class="tileIcon">📊</div><div class="tileText">Reportes</div></button>
-        </div>
-        <div class="statsRow">
-          <div class="stat"><div class="statN statN--orange">5</div><div class="statL">Cursos</div></div>
-          <div class="stat"><div class="statN">150</div><div class="statL">Usuarios</div></div>
-          <div class="stat"><div class="statN">18</div><div class="statL">Evaluaciones</div></div>
-          <div class="stat"><div class="statN">4</div><div class="statL">Reportes</div></div>
-        </div>
-        <div class="sectionTitle">Últimos cursos</div>
-        <div class="adminList">
-          <article class="adminCard">
-            <div class="adminCard__left">
-              <div class="adminBadge"><svg viewBox="0 0 24 24" class="icon"><path d="M17 10h-1V8a4 4 0 10-8 0v2H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2v-8a2 2 0 00-2-2zm-7-2a2 2 0 114 0v2h-4V8z"/></svg><span>Certificación Internacional</span></div>
-              <div class="adminRow"><div class="thumb sm"><img src="cover-iso28001.jpg" alt="ISO" /></div><div class="adminMain"><div class="adminTitle">ISO 28001: Seguridad en la Cadena</div><div class="adminMeta">⏱ 3 horas</div><div class="adminMeta2">3 cursos relacionados</div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="iso">Gestionar</button>
-          </article>
-          <article class="adminCard">
-            <div class="adminCard__left">
-              <div class="adminBadge"><span>Certificación DC3</span></div>
-              <div class="adminRow"><div class="thumb sm"><img src="avatar-guardia.png" alt="Normatividad" /></div><div class="adminMain"><div class="adminTitle">Normatividad en Seguridad Privada</div><div class="adminMeta2">5 cursos relacionados</div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="dc3">Gestionar</button>
-          </article>
-        </div>
+  <!-- ══════════════ ADMIN ══════════════ -->
+  <section id="viewAdmin" class="view hidden">
+    <header class="topbar topbar--flat">
+      <div class="topbar__left">
+        <div class="topbar__title topbar__title--big">Panel de Administración</div>
       </div>
-      <!-- Bottom Nav móvil -->
-      <nav class="bottomNav">
-        <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
-        <button class="navItem" data-go="catalog"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
-        <button class="navItem" onclick="toast('Usuarios — Sprint 3')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M16 11a4 4 0 10-8 0 4 4 0 008 0zm-4 6c-4.418 0-8 2.015-8 4.5V23h16v-1.5c0-2.485-3.582-4.5-8-4.5z"/></svg><span>Usuarios</span></button>
-        <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
-      </nav>
-    </section>
+    </header>
+    <div class="page-content page-content--admin">
 
-  </div><!-- /app-shell -->
+      <!-- Tabs admin -->
+      <div class="adminTabs">
+        <button class="adminTab adminTab--active" data-atab="dashboard">📊 Dashboard</button>
+        <button class="adminTab" data-atab="usuarios">👥 Usuarios</button>
+        <button class="adminTab" data-atab="cursos">📘 Cursos</button>
+        <button class="adminTab" data-atab="evaluaciones">📋 Evaluaciones</button>
+      </div>
 
-  <!-- MODAL: Evaluación -->
-  <div id="modalOverlay" class="modalOverlay hidden">
-    <div class="modal">
-      <div class="modal__icon">📋</div>
-      <div class="modal__title">Módulo de Evaluaciones</div>
-      <div class="modal__desc">Las evaluaciones estarán disponibles en el Sprint 3. Por ahora puedes revisar el contenido del curso.</div>
-      <button class="modal__btn" id="btnModalClose">Entendido</button>
+      <!-- TAB: DASHBOARD -->
+      <div id="atab-dashboard" class="adminTabContent">
+        <div class="statsGrid" id="adminStats"></div>
+        <div class="sectionTitle" style="margin-top:20px">Progreso por curso</div>
+        <div id="adminCourseStats"></div>
+      </div>
+
+      <!-- TAB: USUARIOS -->
+      <div id="atab-usuarios" class="adminTabContent hidden">
+        <div class="tabToolbar">
+          <div class="sectionTitle">Usuarios registrados</div>
+          <button class="btnPrimary" onclick="openUserModal()">+ Nuevo usuario</button>
+        </div>
+        <div id="adminUserTable"></div>
+      </div>
+
+      <!-- TAB: CURSOS -->
+      <div id="atab-cursos" class="adminTabContent hidden">
+        <div class="sectionTitle" style="margin-bottom:12px">Gestión de cursos</div>
+        <div id="adminCourseList"></div>
+      </div>
+
+      <!-- TAB: EVALUACIONES -->
+      <div id="atab-evaluaciones" class="adminTabContent hidden">
+        <div class="sectionTitle" style="margin-bottom:12px">Resultados de evaluaciones</div>
+        <div id="adminEvalTable"></div>
+      </div>
+
+    </div>
+    <nav class="bottomNav">
+      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
+      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
+      <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+    </nav>
+  </section>
+
+</div><!-- /app-shell -->
+
+<!-- MODAL EDITAR CURSO -->
+<div id="modalCurso" class="modalOverlay hidden">
+  <div class="modal">
+    <div class="modal__title">Editar curso</div>
+    <input type="hidden" id="editCourseKey"/>
+    <label class="editLabel">Título</label>
+    <input class="editInput" id="editTitle" type="text"/>
+    <label class="editLabel">Badge / Certificación</label>
+    <input class="editInput" id="editBadge" type="text"/>
+    <label class="editLabel">Instructor</label>
+    <input class="editInput" id="editInstructor" type="text"/>
+    <label class="editLabel">Duración</label>
+    <input class="editInput" id="editDuration" type="text"/>
+    <label class="editLabel">Descripción</label>
+    <textarea class="editTextarea" id="editDesc" rows="3"></textarea>
+    <div class="modal__actions">
+      <button class="modal__btn modal__btn--cancel" id="btnCancelEdit">Cancelar</button>
+      <button class="modal__btn" id="btnSaveEdit">Guardar cambios</button>
     </div>
   </div>
+</div>
 
-  <script src="./app.js"></script>
+<!-- MODAL USUARIO -->
+<div id="modalUsuario" class="modalOverlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="modalUsuarioTitle">Nuevo usuario</div>
+    <input type="hidden" id="editUserId"/>
+    <label class="editLabel">Nombre completo</label>
+    <input class="editInput" id="editUserNombre" type="text" placeholder="Ej. Juan García"/>
+    <label class="editLabel">Usuario (login)</label>
+    <input class="editInput" id="editUserUser" type="text" placeholder="Ej. guardia02"/>
+    <label class="editLabel">Contraseña</label>
+    <input class="editInput" id="editUserPass" type="text" placeholder="Mínimo 6 caracteres"/>
+    <label class="editLabel">Rol</label>
+    <select class="editInput" id="editUserRole">
+      <option value="guardia">Guardia</option>
+      <option value="maestro">Instructor</option>
+      <option value="admin">Administrador</option>
+    </select>
+    <label class="editLabel">Estado</label>
+    <select class="editInput" id="editUserStatus">
+      <option value="activo">Activo</option>
+      <option value="inactivo">Inactivo</option>
+    </select>
+    <div id="modalUsuarioError" class="loginError hidden" style="margin-top:10px"></div>
+    <div class="modal__actions">
+      <button class="modal__btn modal__btn--cancel" id="btnCancelUser">Cancelar</button>
+      <button class="modal__btn" id="btnSaveUser">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="./app.js"></script>
 </body>
 </html>
